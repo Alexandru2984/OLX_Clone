@@ -1,0 +1,116 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Înregistrare - OLX Clone{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Înregistrare
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                Nume utilizator <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                       name="username" 
+                                       id="{{ form.username.id_for_label }}"
+                                       placeholder="Alege un nume de utilizator"
+                                       value="{{ form.username.value|default:'' }}"
+                                       required>
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">{{ form.username.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Între 3-150 caractere. Doar litere, cifre și @/./+/-/_</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                Parola <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input type="password" 
+                                       class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                                       name="password1" 
+                                       id="{{ form.password1.id_for_label }}"
+                                       placeholder="Alege o parolă sigură"
+                                       required>
+                            </div>
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback">{{ form.password1.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                Confirmă parola <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input type="password" 
+                                       class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                                       name="password2" 
+                                       id="{{ form.password2.id_for_label }}"
+                                       placeholder="Repetă parola"
+                                       required>
+                            </div>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback">{{ form.password2.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Parola trebuie să conțină:</strong><br>
+                                • Cel puțin 8 caractere<br>
+                                • Nu poate fi doar cifre<br>
+                                • Nu poate fi prea comună
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus me-2"></i>Creează contul
+                            </button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="text-center">
+                            <p class="mb-0">Ai deja cont?</p>
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Conectează-te aici
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

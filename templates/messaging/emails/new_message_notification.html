@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesaj nou</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .message-box {
+            background: white;
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .listing-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .sender-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .sender-avatar {
+            width: 40px;
+            height: 40px;
+            background: #007bff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📧 Mesaj nou!</h1>
+    </div>
+    
+    <div class="content">
+        <h2>Salut {{ receiver.first_name|default:receiver.username }}!</h2>
+        
+        <p>Ai primit un mesaj nou pe {{ site_name }} referitor la anunțul tău:</p>
+        
+        <div class="listing-info">
+            <h3>{{ listing.title }}</h3>
+            <p><strong>Preț:</strong> {{ listing.price }} RON</p>
+            <p><strong>Locație:</strong> {{ listing.city }}, {{ listing.county }}</p>
+        </div>
+        
+        <div class="message-box">
+            <div class="sender-info">
+                <div class="sender-avatar">
+                    {{ sender.username|first|upper }}
+                </div>
+                <div>
+                    <strong>{{ sender.first_name|default:sender.username }}</strong><br>
+                    <small style="color: #666;">{{ message.created_at|date:"d.m.Y H:i" }}</small>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                {{ message.content|linebreaks }}
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="{{ protocol }}://{{ domain }}{% url 'conversation_detail' message.conversation.id %}" class="button">
+                Răspunde la mesaj
+            </a>
+        </div>
+        
+        <p><strong>Sfaturi pentru siguranță:</strong></p>
+        <ul>
+            <li>🛡️ Întâlnește-te cu cumpărătorul într-un loc public</li>
+            <li>💰 Nu accepta plăți în avans sau transferuri înainte de întâlnire</li>
+            <li>📱 Verifică identitatea persoanei prin telefon</li>
+            <li>❌ Nu furniza date personale sensibile</li>
+        </ul>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+        
+        <p style="font-size: 12px; color: #666;">
+            <strong>Nu vrei să primești aceste notificări?</strong><br>
+            Poți să le dezactivezi din <a href="{{ protocol }}://{{ domain }}{% url 'profile_edit' %}">setările contului tău</a>.
+        </p>
+    </div>
+    
+    <div class="footer">
+        <p>Acest email a fost trimis automat. Te rugăm să nu răspunzi la acest mesaj.</p>
+        <p>© 2025 {{ site_name }}. Toate drepturile rezervate.</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,216 @@
+{% extends 'base/base.html' %}
+
+{% block title %}OLX Clone - Anunțuri clasificate{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Găsește ce cauți</h1>
+                <p class="lead">Mii de anunțuri noi în fiecare zi</p>
+            </div>
+            <div class="col-lg-6">
+                <!-- Search Form -->
+                <form method="get" class="card p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <input type="text" 
+                                   name="search" 
+                                   class="form-control form-control-lg" 
+                                   placeholder="Ce cauți?"
+                                   value="{{ search_query|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <select name="category" class="form-select">
+                                <option value="">Toate categoriile</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.slug }}" 
+                                            {% if selected_category == category.slug %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" 
+                                   name="city" 
+                                   class="form-control" 
+                                   placeholder="Orașul"
+                                   value="{{ selected_city|default:'' }}">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-warning btn-lg w-100">
+                                <i class="fas fa-search me-2"></i>Caută
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories Section -->
+<div class="container my-5">
+    <h2 class="text-center mb-4">Categorii populare</h2>
+    <div class="row">
+        {% for category in categories %}
+            <div class="col-lg-3 col-md-4 col-6 mb-3">
+                <a href="?category={{ category.slug }}" class="text-decoration-none">
+                    <div class="card h-100 text-center border-0 shadow-sm listing-card">
+                        <div class="card-body">
+                            <i class="fas fa-{{ category.icon|default:'tag' }} fa-2x text-primary mb-3"></i>
+                            <h6 class="card-title">{{ category.name }}</h6>
+                            <small class="text-muted">{{ category.listings.count }} anunțuri</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Listings Section -->
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            {% if search_query %}
+                Rezultate pentru "{{ search_query }}"
+            {% elif selected_category %}
+                {% for category in categories %}
+                    {% if category.slug == selected_category %}{{ category.name }}{% endif %}
+                {% endfor %}
+            {% else %}
+                Anunțuri recente
+            {% endif %}
+        </h2>
+        <span class="badge bg-secondary">{{ page_obj.paginator.count }} anunțuri</span>
+    </div>
+
+    {% if page_obj %}
+        <div class="row">
+            {% for listing in page_obj %}
+                <div class="col-lg-3 col-md-4 col-6 mb-4">
+                    <div class="card h-100 listing-card">
+                        <div class="position-relative">
+                            {% if listing.get_main_image %}
+                                <img src="{{ listing.get_main_image }}" 
+                                     class="card-img-top" 
+                                     alt="{{ listing.title }}"
+                                     style="height: 200px; object-fit: cover;">
+                            {% else %}
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                                     style="height: 200px;">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            
+                            {% if listing.is_negotiable %}
+                                <span class="badge bg-warning position-absolute top-0 end-0 m-2">
+                                    Negociabil
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title">
+                                <a href="{% url 'listing_detail' listing.slug %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ listing.title|truncatechars:50 }}
+                                </a>
+                            </h6>
+                            
+                            <p class="price-tag mb-2">{{ listing.price|floatformat:0 }} LEI</p>
+                            
+                            <p class="card-text text-muted small flex-grow-1">
+                                {{ listing.description|truncatechars:80 }}
+                            </p>
+                            
+                            <div class="mt-auto">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    {{ listing.city }}, {{ listing.county }}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-eye me-1"></i>
+                                    {{ listing.views }} vizualizări
+                                </small>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ listing.created_at|timesince }} în urmă
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginare anunțuri">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}">
+                                Prima
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}">
+                                Anterioară
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}">
+                                Următoarea
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}">
+                                Ultima
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+            <h4>Nu am găsit niciun anunț</h4>
+            <p class="text-muted">Încearcă să modifici criteriile de căutare.</p>
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                Vezi toate anunțurile
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- CTA Section -->
+{% if not user.is_authenticated %}
+<div class="bg-light py-5">
+    <div class="container text-center">
+        <h3>Vrei să vinzi ceva?</h3>
+        <p class="text-muted">Publică gratuit anunțul tău și ajunge la mii de cumpărători potențiali!</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-3">
+            <i class="fas fa-user-plus me-2"></i>Înregistrează-te
+        </a>
+        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">
+            <i class="fas fa-sign-in-alt me-2"></i>Conectează-te
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

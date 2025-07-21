@@ -1,0 +1,15 @@
+<div class="message-bubble {% if message.sender == user %}sent{% else %}received{% endif %}">
+    <div class="message-content">
+        {{ message.content|linebreaks }}
+    </div>
+    <div class="message-time">
+        {{ message.created_at|date:"H:i" }}
+        {% if message.sender == user %}
+            {% if message.is_read %}
+                <i class="fas fa-check-double text-light ms-1" title="Citit"></i>
+            {% else %}
+                <i class="fas fa-check text-light ms-1" title="Trimis"></i>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>

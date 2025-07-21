@@ -1,0 +1,474 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Anunțurile mele{% endblock %}
+
+{% block extra_css %}
+<style>
+    .listings-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .filter-tabs {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+    
+    .filter-tabs .nav-link {
+        border: none;
+        border-radius: 8px;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .filter-tabs .nav-link.active {
+        background: #007bff;
+        color: white;
+    }
+    
+    .listing-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    
+    .listing-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .listing-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+    }
+    
+    .listing-placeholder {
+        width: 120px;
+        height: 120px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-weight: bold;
+    }
+    
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-sold {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-expired {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .stats-overview {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="listings-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1><i class="fas fa-list me-3"></i>Anunțurile mele</h1>
+                <p class="mb-0">Gestionează și monitorizează toate anunțurile tale</p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'listing_create' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-plus me-2"></i>Adaugă anunț nou
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistici overview -->
+    <div class="stats-overview">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ total_listings }}</div>
+                    <div class="text-muted">Total anunțuri</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ active_listings }}</div>
+                    <div class="text-muted">Active</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ sold_listings }}</div>
+                    <div class="text-muted">Vândute</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ views_total|default:0 }}</div>
+                    <div class="text-muted">Total vizualizări</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtre -->
+    <div class="filter-tabs">
+        <ul class="nav nav-pills" id="statusTabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="?status=all">
+                    Toate <span class="badge bg-light text-dark ms-1">{{ total_listings }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="?status=active">
+                    Active <span class="badge bg-light text-dark ms-1">{{ active_listings }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="?status=inactive">
+                    Inactive <span class="badge bg-light text-dark ms-1">{{ inactive_listings }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="?status=sold">
+                    Vândute <span class="badge bg-light text-dark ms-1">{{ sold_listings }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Lista anunțuri -->
+    {% if listings %}
+        {% for listing in listings %}
+            <div class="listing-card">
+                <div class="row g-0">
+                    <div class="col-auto">
+                        {% if listing.images.first %}
+                            <img src="{{ listing.images.first.image.url }}" 
+                                 class="listing-image" 
+                                 alt="{{ listing.title }}">
+                        {% else %}
+                            <div class="listing-placeholder">
+                                <i class="fas fa-image fa-2x"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="d-flex align-items-start justify-content-between mb-2">
+                                        <h5 class="card-title mb-1">
+                                            <a href="{% url 'listing_detail' listing.slug %}" 
+                                               class="text-decoration-none">
+                                                {{ listing.title }}
+                                            </a>
+                                        </h5>
+                                        <span class="status-badge status-{{ listing.status }}">
+                                            {% if listing.status == 'active' %}
+                                                <i class="fas fa-check-circle me-1"></i>Activ
+                                            {% elif listing.status == 'sold' %}
+                                                <i class="fas fa-handshake me-1"></i>Vândut
+                                            {% elif listing.status == 'expired' %}
+                                                <i class="fas fa-pause-circle me-1"></i>Dezactivat
+                                            {% elif listing.status == 'draft' %}
+                                                <i class="fas fa-edit me-1"></i>Ciornă
+                                            {% endif %}
+                                        </span>
+                                                <i class="fas fa-clock me-1"></i>Expirat
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <span class="h4 text-primary mb-0">{{ listing.price }} RON</span>
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ listing.city }}, {{ listing.county }}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center gap-3 text-muted small">
+                                        <span>
+                                            <i class="fas fa-calendar me-1"></i>{{ listing.created_at|date:"d.m.Y" }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-eye me-1"></i>{{ listing.views|default:0 }} vizualizări
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-comments me-1"></i>{{ listing.messages_count|default:0 }} mesaje
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="action-buttons justify-content-end">
+                                        <a href="{% url 'listing_detail' listing.slug %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>Vezi
+                                        </a>
+                                        
+                                        <a href="{% url 'listing_edit' listing.slug %}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit me-1"></i>Editează
+                                        </a>
+                                        
+                                        <!-- Dropdown pentru schimbarea status-ului -->
+                                        <div class="dropdown d-inline">
+                                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" 
+                                                    type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-cog me-1"></i>Status
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                {% if listing.status != 'active' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" 
+                                                           onclick="changeStatus('{{ listing.slug }}', 'active')">
+                                                            <i class="fas fa-check text-success me-2"></i>Activează
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                {% if listing.status != 'sold' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" 
+                                                           onclick="changeStatus('{{ listing.slug }}', 'sold')">
+                                                            <i class="fas fa-handshake text-info me-2"></i>Marchează ca vândut
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                {% if listing.status != 'expired' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" 
+                                                           onclick="changeStatus('{{ listing.slug }}', 'expired')">
+                                                            <i class="fas fa-pause text-warning me-2"></i>Dezactivează
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                {% if listing.status != 'draft' %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" 
+                                                           onclick="changeStatus('{{ listing.slug }}', 'draft')">
+                                                            <i class="fas fa-edit text-secondary me-2"></i>Salvează ca ciornă
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>>
+                                                <i class="fas fa-play me-1"></i>Activează
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if listing.status != 'sold' %}
+                                            <button class="btn btn-outline-info btn-sm" 
+                                                    onclick="markAsSold({{ listing.id }})">
+                                                <i class="fas fa-handshake me-1"></i>Marcat vândut
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <button class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteListing({{ listing.id }})">
+                                            <i class="fas fa-trash me-1"></i>Șterge
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        
+        <!-- Paginare -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginare anunțuri">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Următor</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <!-- Stare goală -->
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>Nu ai încă niciun anunț</h3>
+            <p>Începe să vinzi produsele tale creând primul anunț!</p>
+            <a href="{% url 'listing_create' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Creează primul anunț
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// CSRF Token pentru toate request-urile
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+function changeStatus(listingSlug, newStatus) {
+    const statusMessages = {
+        'active': 'activezi',
+        'sold': 'marchezi ca vândut',
+        'expired': 'dezactivezi',
+        'draft': 'salvezi ca ciornă'
+    };
+    
+    const message = `Ești sigur că vrei să ${statusMessages[newStatus]} acest anunț?`;
+    
+    if (confirm(message)) {
+        // Creează un form și îl trimite
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/toggle-status/${listingSlug}/`;
+        
+        // Adaugă CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Adaugă status
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = newStatus;
+        form.appendChild(statusInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function markAsSold(listingSlug) {
+    changeStatus(listingSlug, 'sold');
+}
+
+function deleteListing(listingId) {
+    if (confirm('Ești sigur că vrei să ștergi acest anunț? Această acțiune nu poate fi anulată.')) {
+        fetch(`/listings/${listingId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('A apărut o eroare. Te rugăm să încerci din nou.');
+            }
+        })
+        .catch(error => {
+            alert('A apărut o eroare. Te rugăm să încerci din nou.');
+        });
+    }
+}
+
+// Activează tab-ul curent pe baza URL-ului
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status') || 'all';
+    
+    // Elimină clasa active de pe toate tab-urile
+    document.querySelectorAll('#statusTabs .nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Activează tab-ul curent
+    const activeTab = document.querySelector(`#statusTabs a[href*="status=${status}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+});
+</script>
+{% endblock %}

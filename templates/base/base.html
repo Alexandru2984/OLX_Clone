@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OLX Clone - Anunțuri clasificate{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {% load static %}
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+            color: #007bff !important;
+        }
+        .category-icon {
+            width: 24px;
+            text-align: center;
+        }
+        .listing-card {
+            transition: transform 0.2s;
+        }
+        .listing-card:hover {
+            transform: translateY(-2px);
+        }
+        .price-tag {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .image-preview {
+            max-width: 150px;
+            max-height: 150px;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .compressed-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .drag-drop-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .drag-drop-area:hover,
+        .drag-drop-area.drag-over {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+            transform: scale(1.02);
+        }
+        .drag-drop-area.drag-over {
+            border-style: solid;
+            box-shadow: 0 8px 25px rgba(0,123,255,0.15);
+        }
+        .drag-drop-area.drag-over::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(0,123,255,0.1) 50%, transparent 70%);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .drag-drop-icon {
+            font-size: 3rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .drag-drop-area:hover .drag-drop-icon,
+        .drag-drop-area.drag-over .drag-drop-icon {
+            color: #007bff;
+            transform: scale(1.1);
+        }
+        .file-input-hidden {
+            display: none;
+        }
+        .image-preview-container {
+            position: relative;
+        }
+        .image-remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-remove-btn:hover {
+            background: rgba(220, 53, 69, 1);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-store me-2"></i>OLX Clone
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="fas fa-home me-1"></i>Acasă
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'listing_create' %}">
+                            <i class="fas fa-plus me-1"></i>Adaugă anunț
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-envelope me-1"></i>Mesaje
+                                <span id="messages-count-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                                    0
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
+                                <li class="dropdown-header">Mesaje recente</li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li id="notifications-container">
+                                    <div class="text-center py-3 text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i> Se încarcă...
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-center" href="{% url 'conversation_list' %}">
+                                        <i class="fas fa-comments me-2"></i>Vezi toate mesajele
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'profile' %}">
+                                    <i class="fas fa-user-circle me-2"></i>Profilul meu
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'my_listings' %}">
+                                    <i class="fas fa-list me-2"></i>Anunțurile mele
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'saved_listings' %}">
+                                    <i class="fas fa-heart me-2"></i>Anunțuri salvate
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item border-0 bg-transparent">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Deconectare
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Conectare
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">
+                                <i class="fas fa-user-plus me-1"></i>Înregistrare
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-4 border-top">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>OLX Clone</h5>
+                    <p class="text-muted">Platforma ta de anunțuri clasificate</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted">&copy; 2025 OLX Clone. Toate drepturile rezervate.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Messaging Notifications -->
+    {% if user.is_authenticated %}
+    <script>
+        // Sistem de notificări pentru mesaje
+        function updateMessagesNotifications() {
+            fetch('{% url "get_unread_count" %}')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('messages-count-badge');
+                    const container = document.getElementById('notifications-container');
+                    
+                    // Actualizează badge-ul
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count;
+                        badge.style.display = 'inline';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                    
+                    // Actualizează notificările din dropdown
+                    if (data.notifications && data.notifications.length > 0) {
+                        container.innerHTML = '';
+                        data.notifications.forEach(notification => {
+                            const notificationElement = document.createElement('li');
+                            notificationElement.innerHTML = `
+                                <a class="dropdown-item py-2" href="/mesaje/conversatie/${notification.conversation_id}/">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0 me-2">
+                                            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                ${notification.sender.charAt(0).toUpperCase()}
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 min-width-0">
+                                            <div class="fw-semibold text-truncate">${notification.sender}</div>
+                                            <div class="small text-muted text-truncate">${notification.message_preview}</div>
+                                            <div class="small text-muted">${notification.created_at}</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            `;
+                            container.appendChild(notificationElement);
+                        });
+                    } else {
+                        container.innerHTML = `
+                            <li class="text-center py-3 text-muted">
+                                <i class="fas fa-comment-slash me-2"></i>Nu ai mesaje noi
+                            </li>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Eroare la actualizarea notificărilor:', error);
+                    const container = document.getElementById('notifications-container');
+                    container.innerHTML = `
+                        <li class="text-center py-3 text-muted">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Eroare la încărcare
+                        </li>
+                    `;
+                });
+        }
+        
+        // Actualizează notificările la încărcarea paginii
+        document.addEventListener('DOMContentLoaded', updateMessagesNotifications);
+        
+        // Actualizează notificările periodic (la fiecare 30 de secunde)
+        setInterval(updateMessagesNotifications, 30000);
+        
+        // Actualizează notificările când se deschide dropdown-ul
+        document.getElementById('messagesDropdown').addEventListener('click', function() {
+            updateMessagesNotifications();
+        });
+    </script>
+    {% endif %}
+    
+    <!-- Image Compression JavaScript -->
+    <script>
+        class ImageCompressor {
+            constructor(options = {}) {
+                this.maxWidth = options.maxWidth || 1200;
+                this.maxHeight = options.maxHeight || 800;
+                this.quality = options.quality || 0.8;
+                this.format = options.format || 'image/jpeg';
+            }
+
+            compress(file) {
+                return new Promise((resolve, reject) => {
+                    if (!file.type.startsWith('image/')) {
+                        reject(new Error('Fișierul nu este o imagine'));
+                        return;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+
+                    img.onload = () => {
+                        // Calculez dimensiunile noi păstrând aspectul
+                        let { width, height } = this.calculateDimensions(img.width, img.height);
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Desenez imaginea comprimată
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Convertesc la blob
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                // Creez un fișier nou cu numele original
+                                const compressedFile = new File([blob], file.name, {
+                                    type: this.format,
+                                    lastModified: Date.now()
+                                });
+                                
+                                resolve({
+                                    original: file,
+                                    compressed: compressedFile,
+                                    originalSize: file.size,
+                                    compressedSize: blob.size,
+                                    compressionRatio: ((file.size - blob.size) / file.size * 100).toFixed(1)
+                                });
+                            } else {
+                                reject(new Error('Eroare la compresia imaginii'));
+                            }
+                        }, this.format, this.quality);
+                    };
+
+                    img.onerror = () => reject(new Error('Eroare la încărcarea imaginii'));
+                    img.src = URL.createObjectURL(file);
+                });
+            }
+
+            calculateDimensions(width, height) {
+                if (width <= this.maxWidth && height <= this.maxHeight) {
+                    return { width, height };
+                }
+
+                const aspectRatio = width / height;
+
+                if (width > height) {
+                    width = this.maxWidth;
+                    height = width / aspectRatio;
+                } else {
+                    height = this.maxHeight;
+                    width = height * aspectRatio;
+                }
+
+                return { width: Math.round(width), height: Math.round(height) };
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+        }
+
+        // Funcție globală pentru compresia imaginilor
+        window.compressImages = function(inputElement, previewContainer, compressionInfo) {
+            const compressor = new ImageCompressor({
+                maxWidth: 1200,
+                maxHeight: 800,
+                quality: 0.8
+            });
+
+            inputElement.addEventListener('change', async function(e) {
+                await processFiles(Array.from(e.target.files));
+            });
+
+            async function processFiles(files) {
+                const compressedFiles = [];
+                
+                // Curăț preview-ul anterior
+                if (previewContainer) {
+                    previewContainer.innerHTML = '';
+                }
+                
+                // Curăț info-ul de compresie anterior
+                if (compressionInfo) {
+                    compressionInfo.innerHTML = '';
+                }
+
+                for (let file of files) {
+                    try {
+                        const result = await compressor.compress(file);
+                        compressedFiles.push(result.compressed);
+                        
+                        // Afișez preview-ul
+                        if (previewContainer) {
+                            const preview = document.createElement('div');
+                            preview.className = 'col-md-3 mb-3';
+                            preview.innerHTML = `
+                                <div class="card image-preview-container">
+                                    <button type="button" class="image-remove-btn" data-file-index="${compressedFiles.length}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <img src="${URL.createObjectURL(result.compressed)}" 
+                                         class="card-img-top image-preview" alt="Preview">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted">${file.name}</small>
+                                        <div class="compressed-info">
+                                            Original: ${compressor.formatFileSize(result.originalSize)}<br>
+                                            Comprimat: ${compressor.formatFileSize(result.compressedSize)}<br>
+                                            Economie: ${result.compressionRatio}%
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            previewContainer.appendChild(preview);
+                            
+                            // Adaug event listener pentru butonul de ștergere
+                            const removeBtn = preview.querySelector('.image-remove-btn');
+                            removeBtn.addEventListener('click', function() {
+                                const fileIndex = parseInt(this.getAttribute('data-file-index'));
+                                removeImageFromPreview(preview, fileIndex, compressedFiles);
+                            });
+                        }
+                        
+                    } catch (error) {
+                        console.error('Eroare la compresia imaginii:', error);
+                        if (compressionInfo) {
+                            compressionInfo.innerHTML += `<div class="alert alert-warning">Eroare la ${file.name}: ${error.message}</div>`;
+                        }
+                    }
+                }
+
+                // Înlocuiesc fișierele originale cu cele comprimate
+                const dataTransfer = new DataTransfer();
+                compressedFiles.forEach(file => dataTransfer.items.add(file));
+                inputElement.files = dataTransfer.files;
+
+                // Afișez informațiile generale de compresie
+                if (compressionInfo && compressedFiles.length > 0) {
+                    const totalOriginal = files.reduce((sum, file) => sum + file.size, 0);
+                    const totalCompressed = compressedFiles.reduce((sum, file) => sum + file.size, 0);
+                    const totalSavings = ((totalOriginal - totalCompressed) / totalOriginal * 100).toFixed(1);
+                    
+                    compressionInfo.innerHTML += `
+                        <div class="alert alert-success">
+                            <strong>Compresie reușită!</strong><br>
+                            ${compressedFiles.length} imagini comprimate<br>
+                            Mărime totală: ${compressor.formatFileSize(totalOriginal)} → ${compressor.formatFileSize(totalCompressed)}<br>
+                            Economie totală: ${totalSavings}%
+                        </div>
+                    `;
+                }
+            }
+
+            // Returnez funcția procesFiles pentru a fi folosită de drag&drop
+            return { 
+                processFiles,
+                removeImageFromPreview: function(previewElement, fileIndex, filesArray) {
+                    // Șterg din array
+                    filesArray.splice(fileIndex, 1);
+                    
+                    // Șterg elementul visual
+                    previewElement.remove();
+                    
+                    // Actualizez input-ul
+                    const dataTransfer = new DataTransfer();
+                    filesArray.forEach(file => dataTransfer.items.add(file));
+                    inputElement.files = dataTransfer.files;
+                    
+                    // Actualizez indexurile pentru restul imaginilor
+                    const remainingPreviews = previewContainer.querySelectorAll('.image-remove-btn');
+                    remainingPreviews.forEach((btn, index) => {
+                        btn.setAttribute('data-file-index', index);
+                    });
+                    
+                    // Actualizez info-ul de compresie dacă e necesar
+                    if (filesArray.length === 0 && compressionInfo) {
+                        compressionInfo.innerHTML = '<div class="alert alert-info">Nu sunt imagini selectate.</div>';
+                    }
+                }
+            };
+        };
+
+        // Funcție globală pentru drag and drop
+        window.setupDragAndDrop = function(dropArea, inputElement, processFiles) {
+            // Previne comportamentul default pentru drag events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            // Handle dropped files
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            // Click to select files
+            dropArea.addEventListener('click', () => {
+                inputElement.click();
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight(e) {
+                dropArea.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                dropArea.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = Array.from(dt.files);
+                
+                // Filtrez doar imaginile
+                const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                
+                if (imageFiles.length > 0) {
+                    // Adaug fișierele la input
+                    const dataTransfer = new DataTransfer();
+                    imageFiles.forEach(file => dataTransfer.items.add(file));
+                    inputElement.files = dataTransfer.files;
+                    
+                    // Procesez fișierele
+                    processFiles(imageFiles);
+                } else {
+                    alert('Te rog să adaugi doar fișiere imagine (JPG, PNG, GIF, etc.)');
+                }
+            }
+        };
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,424 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Editează anunțul - {{ listing.title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css" rel="stylesheet">
+<style>
+    .image-preview {
+        position: relative;
+        display: inline-block;
+        margin: 10px;
+    }
+    
+    .image-preview img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+    
+    .image-preview .delete-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .required-field {
+        color: #dc3545;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0056b3, #004085);
+        transform: translateY(-1px);
+    }
+    
+    .image-upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    .image-upload-area:hover {
+        border-color: #007bff;
+        background: #f0f8ff;
+    }
+    
+    .existing-images {
+        margin-bottom: 2rem;
+    }
+    
+    .alert-info {
+        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+        border: none;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'home' %}">Acasă</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'my_listings' %}">Anunțurile mele</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'listing_detail' listing.slug %}">{{ listing.title|truncatechars:30 }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Editează</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-edit me-2 text-primary"></i>Editează anunțul
+                </h2>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="listing-form">
+                {% csrf_token %}
+                
+                <!-- Informații de bază -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>Informații de bază
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    Titlu anunț <span class="required-field">*</span>
+                                </label>
+                                {{ form.title|add_class:"form-control" }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.title.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">
+                                    Categorie <span class="required-field">*</span>
+                                </label>
+                                {{ form.category|add_class:"form-select" }}
+                                {% if form.category.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.category.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            Descriere <span class="required-field">*</span>
+                        </label>
+                        {{ form.description|add_class:"form-control" }}
+                        <div class="form-text">Descrie produsul tău în detaliu pentru a atrage mai mulți cumpărători.</div>
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.description.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Preț și condiție -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-tag me-2"></i>Preț și condiție
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">
+                                    Preț (RON) <span class="required-field">*</span>
+                                </label>
+                                <div class="input-group">
+                                    {{ form.price|add_class:"form-control" }}
+                                    <span class="input-group-text">RON</span>
+                                </div>
+                                {% if form.price.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.price.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.condition.id_for_label }}" class="form-label">
+                                    Starea produsului <span class="required-field">*</span>
+                                </label>
+                                {{ form.condition|add_class:"form-select" }}
+                                {% if form.condition.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.condition.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Localizare -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-map-marker-alt me-2"></i>Localizare
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.county.id_for_label }}" class="form-label">
+                                    Județ <span class="required-field">*</span>
+                                </label>
+                                {{ form.county|add_class:"form-select" }}
+                                {% if form.county.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.county.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.city.id_for_label }}" class="form-label">
+                                    Oraș <span class="required-field">*</span>
+                                </label>
+                                {{ form.city|add_class:"form-control" }}
+                                {% if form.city.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.city.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Imagini -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-images me-2"></i>Imagini
+                    </h4>
+                    
+                    {% if listing.images.all %}
+                        <div class="existing-images">
+                            <h6 class="mb-3">Imagini existente:</h6>
+                            <div class="d-flex flex-wrap">
+                                {% for image in listing.images.all %}
+                                    <div class="image-preview" data-image-id="{{ image.id }}">
+                                        <img src="{{ image.image.url }}" alt="Preview">
+                                        <button type="button" class="delete-btn" onclick="deleteImage({{ image.id }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Poți adăuga până la 5 imagini. Prima imagine va fi imaginea principală a anunțului.
+                    </div>
+                    
+                    <div class="image-upload-area">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                        <h5>Adaugă imagini noi</h5>
+                        <p class="text-muted">Trage și lasă fișierele aici sau fă clic pentru a selecta</p>
+                        
+                        <!-- Formset pentru imagini -->
+                        {{ image_formset.management_form }}
+                        <div id="formset-container">
+                            {% for form in image_formset %}
+                                <div class="formset-form mb-2" style="{% if not form.instance.pk %}display: none;{% endif %}">
+                                    {% for hidden in form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                    
+                                    {% if form.instance.pk %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ form.instance.image.name|default:"Imagine nouă" }}</span>
+                                            {{ form.DELETE|add_class:"form-check-input" }}
+                                            <label for="{{ form.DELETE.id_for_label }}" class="form-check-label ms-2">
+                                                Șterge
+                                            </label>
+                                        </div>
+                                    {% else %}
+                                        {{ form.image|add_class:"form-control" }}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-primary mt-2" onclick="addImageForm()">
+                            <i class="fas fa-plus me-2"></i>Adaugă altă imagine
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contact -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-phone me-2"></i>Contact
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.phone.id_for_label }}" class="form-label">
+                            Număr de telefon
+                        </label>
+                        {{ form.phone|add_class:"form-control" }}
+                        <div class="form-text">Opțional - pentru a fi contactat mai ușor de cumpărători.</div>
+                        {% if form.phone.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.phone.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Butoane -->
+                <div class="d-flex gap-2 justify-content-between">
+                    <div>
+                        <a href="{% url 'listing_detail' listing.slug %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Înapoi la anunț
+                        </a>
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvează modificările
+                        </button>
+                        <a href="{% url 'my_listings' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Anunțurile mele
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Funcție pentru ștergerea imaginilor existente
+function deleteImage(imageId) {
+    if (confirm('Ești sigur că vrei să ștergi această imagine?')) {
+        fetch(`/listings/delete-image/${imageId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`[data-image-id="${imageId}"]`).remove();
+            } else {
+                alert('Eroare la ștergerea imaginii.');
+            }
+        });
+    }
+}
+
+// Funcție pentru adăugarea unor noi forme de imagine
+function addImageForm() {
+    const container = document.getElementById('formset-container');
+    const forms = container.querySelectorAll('.formset-form');
+    const hiddenForms = Array.from(forms).filter(form => form.style.display === 'none');
+    
+    if (hiddenForms.length > 0) {
+        hiddenForms[0].style.display = 'block';
+    } else {
+        alert('Ai atins limita maximă de imagini.');
+    }
+}
+
+// Validare formular
+document.getElementById('listing-form').addEventListener('submit', function(e) {
+    const requiredFields = ['title', 'description', 'price', 'category', 'condition', 'county', 'city'];
+    let hasErrors = false;
+    
+    requiredFields.forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field && !field.value.trim()) {
+            hasErrors = true;
+            field.classList.add('is-invalid');
+        } else if (field) {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (hasErrors) {
+        e.preventDefault();
+        alert('Te rog să completezi toate câmpurile obligatorii.');
+        window.scrollTo(0, 0);
+    }
+});
+</script>
+{% endblock %}

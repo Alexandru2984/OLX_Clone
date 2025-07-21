@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Email de confirmare trimis{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center bg-success text-white">
+                    <h4><i class="fas fa-check-circle me-2"></i>Email trimis cu succes!</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-envelope text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h5>Verifică-ți email-ul!</h5>
+                    
+                    <p>Am trimis un email de confirmare la adresa ta. Te rugăm să:</p>
+                    
+                    <ol class="text-start">
+                        <li>Verifică inbox-ul pentru email-ul de la OLX Clone</li>
+                        <li>Dacă nu găsești email-ul, verifică folderul spam/junk</li>
+                        <li>Dă clic pe link-ul de confirmare din email</li>
+                        <li>Revino pe site pentru a te conecta</li>
+                    </ol>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Important:</strong> Link-ul de confirmare este valabil doar 3 zile.
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-primary">
+                            <i class="fas fa-home me-1"></i>Înapoi la pagina principală
+                        </a>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <small class="text-muted">
+                        <strong>Nu ai primit email-ul?</strong><br>
+                        <a href="{% url 'resend_confirmation' %}">Retrimite email-ul de confirmare</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

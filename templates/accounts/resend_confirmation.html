@@ -1,0 +1,42 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Retrimite confirmare email{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h4><i class="fas fa-envelope me-2"></i>Retrimite confirmare email</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-envelope-open text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    
+                    <p class="text-center">Email-ul tău <strong>{{ user.email }}</strong> nu a fost încă confirmat.</p>
+                    
+                    <p>Pentru a-ți activa contul și a putea accesa toate funcționalitățile site-ului, te rugăm să confirmi adresa de email.</p>
+                    
+                    <form method="post" class="text-center">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>Retrimite email de confirmare
+                        </button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <small class="text-muted">
+                            <strong>Nu ai primit email-ul?</strong><br>
+                            Verifică folderul spam/junk sau încearcă să retrimiți confirmarea.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

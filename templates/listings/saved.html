@@ -1,0 +1,494 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Anunțuri salvate{% endblock %}
+
+{% block extra_css %}
+<style>
+    .saved-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .saved-listing-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .saved-listing-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .listing-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+    }
+    
+    .listing-placeholder {
+        width: 120px;
+        height: 120px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+    
+    .saved-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #28a745;
+        color: white;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .price-highlight {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .seller-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-top: 1rem;
+    }
+    
+    .seller-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+    
+    .filter-section {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+    
+    .sort-dropdown {
+        min-width: 200px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .stats-bar {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
+    }
+    
+    .unsave-btn {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .saved-listing-card:hover .unsave-btn {
+        opacity: 1;
+    }
+    
+    .unsave-btn:hover {
+        background: #dc3545;
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="saved-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1><i class="fas fa-heart me-3"></i>Anunțuri salvate</h1>
+                <p class="mb-0">Anunțurile tale favorite într-un singur loc</p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'home' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-search me-2"></i>Caută alte anunțuri
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    {% if saved_listings %}
+        <!-- Statistici -->
+        <div class="stats-bar">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bookmark me-2"></i>{{ saved_listings|length }} anunțuri salvate
+                    </h5>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        Ultimul salvat: {{ latest_saved.created_at|date:"d.m.Y H:i"|default:"N/A" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtre și sortare -->
+        <div class="filter-section">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm active" data-filter="all">
+                            Toate
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" data-filter="recent">
+                            Adăugate recent
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" data-filter="low-price">
+                            Preț mic
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" data-filter="high-price">
+                            Preț mare
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            <i class="fas fa-sort me-1"></i>Sortează după
+                        </button>
+                        <ul class="dropdown-menu sort-dropdown">
+                            <li><a class="dropdown-item" href="#" data-sort="date_saved">Data salvării</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="price_asc">Preț crescător</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="price_desc">Preț descrescător</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="date_posted">Data postării</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="title">Titlu A-Z</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista anunțuri salvate -->
+        <div id="saved-listings-container">
+            {% for saved in saved_listings %}
+                <div class="saved-listing-card" data-listing-id="{{ saved.listing.id }}" 
+                     data-price="{{ saved.listing.price }}" 
+                     data-saved-date="{{ saved.created_at|date:'Y-m-d' }}"
+                     data-posted-date="{{ saved.listing.created_at|date:'Y-m-d' }}"
+                     data-title="{{ saved.listing.title|lower }}">
+                    
+                    <!-- Buton pentru a elimina din favorite -->
+                    <button class="unsave-btn" onclick="removeSavedListing('{{ saved.listing.slug }}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    
+                    <!-- Badge salvat -->
+                    <div class="saved-badge">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    
+                    <div class="row g-0">
+                        <div class="col-auto">
+                            {% if saved.listing.images.first %}
+                                <img src="{{ saved.listing.images.first.image.url }}" 
+                                     class="listing-image" 
+                                     alt="{{ saved.listing.title }}">
+                            {% else %}
+                                <div class="listing-placeholder">
+                                    <i class="fas fa-image fa-2x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-8">
+                                        <h5 class="card-title mb-2">
+                                            <a href="{% url 'listing_detail' saved.listing.slug %}" 
+                                               class="text-decoration-none">
+                                                {{ saved.listing.title }}
+                                            </a>
+                                        </h5>
+                                        
+                                        <div class="price-highlight mb-2">
+                                            {{ saved.listing.price }} RON
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center gap-3 mb-2 text-muted small">
+                                            <span>
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ saved.listing.city }}, {{ saved.listing.county }}
+                                            </span>
+                                            <span>
+                                                <i class="fas fa-calendar me-1"></i>{{ saved.listing.created_at|date:"d.m.Y" }}
+                                            </span>
+                                            <span>
+                                                <i class="fas fa-eye me-1"></i>{{ saved.listing.views|default:0 }} vizualizări
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="card-text text-muted">
+                                            {{ saved.listing.description|truncatechars:120 }}
+                                        </p>
+                                        
+                                        <!-- Info vânzător -->
+                                        <div class="seller-info">
+                                            <div class="d-flex align-items-center">
+                                                <div class="seller-avatar me-2">
+                                                    {{ saved.listing.owner.username|first|upper }}
+                                                </div>
+                                                <div>
+                                                    <strong>{{ saved.listing.owner.username }}</strong>
+                                                    {% if saved.listing.owner.profile.city %}
+                                                        <small class="text-muted d-block">
+                                                            {{ saved.listing.owner.profile.city }}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="ms-auto">
+                                                    <small class="text-muted">
+                                                        Salvat: {{ saved.created_at|date:"d.m.Y" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-lg-4">
+                                        <div class="d-flex flex-column gap-2 h-100 justify-content-center">
+                                            <a href="{% url 'listing_detail' saved.listing.slug %}" 
+                                               class="btn btn-primary">
+                                                <i class="fas fa-eye me-1"></i>Vezi detalii
+                                            </a>
+                                            
+                                            <a href="{% url 'start_conversation' saved.listing.id %}" 
+                                               class="btn btn-outline-success">
+                                                <i class="fas fa-envelope me-1"></i>Contactează
+                                            </a>
+                                            
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="removeSavedListing('{{ saved.listing.slug }}')">
+                                                <i class="fas fa-heart-broken me-1"></i>Elimină din favorite
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginare -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginare anunțuri salvate">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Următor</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <!-- Stare goală -->
+        <div class="empty-state">
+            <i class="fas fa-heart-broken"></i>
+            <h3>Nu ai anunțuri salvate</h3>
+            <p>Când găsești ceva interesant, salvează-l aici pentru mai târziu!</p>
+            <a href="{% url 'home' %}" class="btn btn-success btn-lg">
+                <i class="fas fa-search me-2"></i>Explorează anunțurile
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function removeSavedListing(listingSlug) {
+    if (confirm('Ești sigur că vrei să elimini acest anunț din favorite?')) {
+        fetch(`/salveaza/${listingSlug}/`, {
+            method: 'GET',
+        })
+        .then(() => {
+            // Reîncarcă pagina pentru a actualiza lista
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('A apărut o eroare. Te rog încearcă din nou.');
+        });
+    }
+}
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-100%)';
+                
+                setTimeout(() => {
+                    card.remove();
+                    
+                    // Verifică dacă mai sunt anunțuri salvate
+                    const remainingCards = document.querySelectorAll('.saved-listing-card');
+                    if (remainingCards.length === 0) {
+                        location.reload(); // Reîncarcă pentru a afișa starea goală
+                    }
+                }, 300);
+            } else {
+                alert('A apărut o eroare. Te rugăm să încerci din nou.');
+            }
+        })
+        .catch(error => {
+            alert('A apărut o eroare. Te rugăm să încerci din nou.');
+        });
+    }
+}
+
+// Filtrare și sortare
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const sortLinks = document.querySelectorAll('[data-sort]');
+    const listingsContainer = document.getElementById('saved-listings-container');
+    
+    // Filtrare
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Actualizează butoanele active
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            const cards = Array.from(document.querySelectorAll('.saved-listing-card'));
+            
+            cards.forEach(card => {
+                let show = true;
+                
+                switch(filter) {
+                    case 'recent':
+                        const savedDate = new Date(card.getAttribute('data-saved-date'));
+                        const weekAgo = new Date();
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        show = savedDate >= weekAgo;
+                        break;
+                    case 'low-price':
+                        show = parseInt(card.getAttribute('data-price')) <= 100;
+                        break;
+                    case 'high-price':
+                        show = parseInt(card.getAttribute('data-price')) >= 1000;
+                        break;
+                    default:
+                        show = true;
+                }
+                
+                card.style.display = show ? 'block' : 'none';
+            });
+        });
+    });
+    
+    // Sortare
+    sortLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const sort = this.getAttribute('data-sort');
+            const cards = Array.from(document.querySelectorAll('.saved-listing-card'));
+            
+            cards.sort((a, b) => {
+                switch(sort) {
+                    case 'price_asc':
+                        return parseInt(a.getAttribute('data-price')) - parseInt(b.getAttribute('data-price'));
+                    case 'price_desc':
+                        return parseInt(b.getAttribute('data-price')) - parseInt(a.getAttribute('data-price'));
+                    case 'date_saved':
+                        return new Date(b.getAttribute('data-saved-date')) - new Date(a.getAttribute('data-saved-date'));
+                    case 'date_posted':
+                        return new Date(b.getAttribute('data-posted-date')) - new Date(a.getAttribute('data-posted-date'));
+                    case 'title':
+                        return a.getAttribute('data-title').localeCompare(b.getAttribute('data-title'));
+                    default:
+                        return 0;
+                }
+            });
+            
+            // Reordonează cardurile în DOM
+            cards.forEach(card => listingsContainer.appendChild(card));
+            
+            // Actualizează textul dropdown-ului
+            const dropdownButton = document.querySelector('.dropdown-toggle');
+            dropdownButton.innerHTML = `<i class="fas fa-sort me-1"></i>${this.textContent}`;
+        });
+    });
+});
+</script>
+{% endblock %}

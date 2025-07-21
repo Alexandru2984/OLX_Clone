@@ -1,0 +1,355 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Contactează vânzătorul - {{ listing.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .listing-preview {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #dee2e6;
+    }
+    
+    .quick-message-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .quick-message-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+    }
+    
+    .quick-message-card.selected {
+        border-color: #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .custom-message-area {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .seller-info {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #dee2e6;
+    }
+    
+    .seller-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'home' %}">Acasă</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'listing_detail' listing.slug %}">{{ listing.title|truncatechars:30 }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Contactează vânzătorul</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-4">
+                <i class="fas fa-envelope me-2"></i>Contactează vânzătorul
+            </h2>
+            
+            <!-- Preview anunț -->
+            <div class="listing-preview mb-4">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        {% if listing.images.first %}
+                            <img src="{{ listing.images.first.image.url }}" 
+                                 class="rounded" 
+                                 style="width: 80px; height: 80px; object-fit: cover;"
+                                 alt="{{ listing.title }}">
+                        {% else %}
+                            <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
+                                 style="width: 80px; height: 80px;">
+                                <i class="fas fa-image text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col">
+                        <h5 class="mb-1">{{ listing.title }}</h5>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="h4 text-primary mb-0">{{ listing.price }} RON</span>
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ listing.city }}, {{ listing.county }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{% url 'listing_detail' listing.slug %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>Vezi anunțul
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Info vânzător -->
+            <div class="seller-info mb-4">
+                <div class="d-flex align-items-center">
+                    <div class="seller-avatar me-3">
+                        {{ listing.owner.username|first|upper }}
+                    </div>
+                    <div>
+                        <h5 class="mb-1">{{ listing.owner.username }}</h5>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if listing.owner.profile.city %}
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ listing.owner.profile.city }}
+                                </small>
+                            {% endif %}
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>Membru din {{ listing.owner.date_joined|date:"F Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formular mesaj -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comment me-2"></i>Trimite un mesaj
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="message-form">
+                        {% csrf_token %}
+                        
+                        <!-- Mesaje rapide -->
+                        <div class="mb-4">
+                            <label class="form-label">Alege un mesaj prestabilit sau scrie unul personalizat:</label>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="card quick-message-card h-100" data-message-type="interested">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-heart text-primary mb-2"></i>
+                                            <h6>Sunt interesat</h6>
+                                            <small class="text-muted">Sunt interessat de acest anunț. Mai este disponibil?</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card quick-message-card h-100" data-message-type="price_question">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-tag text-success mb-2"></i>
+                                            <h6>Întrebare preț</h6>
+                                            <small class="text-muted">Care este ultimul preț pentru acest produs?</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card quick-message-card h-100" data-message-type="details">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-info-circle text-info mb-2"></i>
+                                            <h6>Mai multe detalii</h6>
+                                            <small class="text-muted">Aș dori mai multe detalii despre produs.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card quick-message-card h-100" data-message-type="meeting">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-handshake text-warning mb-2"></i>
+                                            <h6>Întâlnire</h6>
+                                            <small class="text-muted">Când și unde putem să ne întâlnim pentru a vedea produsul?</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card quick-message-card h-100" data-message-type="condition">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-star text-secondary mb-2"></i>
+                                            <h6>Starea produsului</h6>
+                                            <small class="text-muted">Poți să îmi spui mai multe despre starea produsului?</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="card quick-message-card h-100" data-message-type="custom">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-edit text-dark mb-2"></i>
+                                            <h6>Mesaj personalizat</h6>
+                                            <small class="text-muted">Scrie propriul tău mesaj</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Input-uri ascunse pentru form -->
+                        <input type="hidden" name="message_type" id="id_message_type" value="">
+                        
+                        <!-- Zona pentru mesaj personalizat -->
+                        <div class="custom-message-area mb-3" id="custom-message-area">
+                            <label for="id_custom_message" class="form-label">Mesajul tău personalizat:</label>
+                            {{ form.custom_message }}
+                        </div>
+                        
+                        <!-- Preview mesaj -->
+                        <div class="alert alert-info" id="message-preview" style="display: none;">
+                            <strong>Preview mesaj:</strong>
+                            <div id="preview-content"></div>
+                        </div>
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="send-message-btn" disabled>
+                                <i class="fas fa-paper-plane me-1"></i>Trimite mesajul
+                            </button>
+                            <a href="{% url 'listing_detail' listing.slug %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Înapoi la anunț
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quickMessageCards = document.querySelectorAll('.quick-message-card');
+    const messageTypeInput = document.getElementById('id_message_type');
+    const customMessageArea = document.getElementById('custom-message-area');
+    const customMessageTextarea = document.getElementById('id_custom_message');
+    const messagePreview = document.getElementById('message-preview');
+    const previewContent = document.getElementById('preview-content');
+    const sendBtn = document.getElementById('send-message-btn');
+    
+    // Debug: verifică dacă textarea-ul există
+    console.log('Custom message textarea:', customMessageTextarea);
+    
+    const quickMessages = {
+        'interested': 'Sunt interessat de acest anunț. Mai este disponibil?',
+        'price_question': 'Care este ultimul preț pentru acest produs?',
+        'details': 'Aș dori mai multe detalii despre produs.',
+        'meeting': 'Când și unde putem să ne întâlnim pentru a vedea produsul?',
+        'condition': 'Poți să îmi spui mai multe despre starea produsului?'
+    };
+    
+    // Handler pentru cardurile de mesaje rapide
+    quickMessageCards.forEach(card => {
+        card.addEventListener('click', function() {
+            // Elimină selecția anterioară
+            quickMessageCards.forEach(c => c.classList.remove('selected'));
+            
+            // Selectează cardul curent
+            this.classList.add('selected');
+            
+            const messageType = this.getAttribute('data-message-type');
+            messageTypeInput.value = messageType;
+            
+            if (messageType === 'custom') {
+                // Afișează zona pentru mesaj personalizat
+                customMessageArea.style.display = 'block';
+                if (customMessageTextarea) {
+                    customMessageTextarea.focus();
+                }
+                messagePreview.style.display = 'none';
+                sendBtn.disabled = true;
+            } else {
+                // Ascunde zona pentru mesaj personalizat
+                customMessageArea.style.display = 'none';
+                
+                // Afișează preview-ul mesajului
+                const message = quickMessages[messageType];
+                previewContent.textContent = message;
+                messagePreview.style.display = 'block';
+                sendBtn.disabled = false;
+            }
+        });
+    });
+    
+    // Handler pentru textarea-ul personalizat
+    if (customMessageTextarea) {
+        customMessageTextarea.addEventListener('input', function() {
+            const message = this.value.trim();
+            
+            if (message) {
+                previewContent.textContent = message;
+                messagePreview.style.display = 'block';
+                sendBtn.disabled = false;
+            } else {
+                messagePreview.style.display = 'none';
+                sendBtn.disabled = true;
+            }
+        });
+    }
+    
+    // Validare înainte de trimitere
+    document.getElementById('message-form').addEventListener('submit', function(e) {
+        const messageType = messageTypeInput.value;
+        
+        if (!messageType) {
+            e.preventDefault();
+            alert('Te rog să selectezi un tip de mesaj.');
+            return;
+        }
+        
+        if (messageType === 'custom' && (!customMessageTextarea || !customMessageTextarea.value.trim())) {
+            e.preventDefault();
+            alert('Te rog să scrii un mesaj personalizat.');
+            if (customMessageTextarea) {
+                customMessageTextarea.focus();
+            }
+            return;
+        }
+        
+        // Dezactivează butonul pentru a preveni dubla trimitere
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Se trimite...';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,229 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ listing.title }} - OLX Clone{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Imagini -->
+            <div class="card mb-4">
+                <div class="card-body p-0">
+                    {% if listing.images.exists %}
+                        <div id="listingCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in listing.images.all %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ image.image.url }}" 
+                                             class="d-block w-100" 
+                                             alt="{{ image.alt_text|default:listing.title }}"
+                                             style="height: 400px; object-fit: cover;">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if listing.images.count > 1 %}
+                                <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon"></span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon"></span>
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 bg-light">
+                            <i class="fas fa-image fa-4x text-muted"></i>
+                            <p class="text-muted mt-3">Nu sunt imagini disponibile</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Detalii anunț -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h1 class="h3 mb-0">{{ listing.title }}</h1>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'toggle_save_listing' listing.slug %}" 
+                               class="btn {% if is_saved %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                <i class="fas fa-heart"></i>
+                                {% if is_saved %}Salvat{% else %}Salvează{% endif %}
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h2 class="price-tag mb-0">{{ listing.price|floatformat:0 }} LEI</h2>
+                            {% if listing.is_negotiable %}
+                                <span class="badge bg-warning text-dark">Negociabil</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <small class="text-muted">
+                                <i class="fas fa-eye me-1"></i>{{ listing.views }} vizualizări<br>
+                                <i class="fas fa-clock me-1"></i>Publicat {{ listing.created_at|timesince }} în urmă
+                            </small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h5>Descriere</h5>
+                    <p class="text-justify">{{ listing.description|linebreaks }}</p>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Detalii</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Stare:</strong> {{ listing.get_condition_display }}</li>
+                                <li><strong>Categorie:</strong> 
+                                    <a href="?category={{ listing.category.slug }}" class="text-decoration-none">
+                                        {{ listing.category.get_full_path }}
+                                    </a>
+                                </li>
+                                <li><strong>Locație:</strong> {{ listing.city }}, {{ listing.county }}</li>
+                            </ul>
+                        </div>
+                        {% if user.is_authenticated and listing.owner == user %}
+                            <div class="col-md-6 text-end">
+                                <a href="{% url 'listing_edit' listing.slug %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Editează anunțul
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Contact -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Contact
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        {% if listing.owner.profile.avatar %}
+                            <img src="{{ listing.owner.profile.avatar.url }}" 
+                                 class="rounded-circle me-3" 
+                                 width="50" height="50" 
+                                 alt="{{ listing.owner.get_full_name }}">
+                        {% else %}
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h6 class="mb-0">{{ listing.owner.get_full_name|default:listing.owner.username }}</h6>
+                            <small class="text-muted">
+                                {{ listing.owner.profile.total_listings }} anunțuri
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Telefon:</strong><br>
+                        {% if listing.owner.profile.phone_public or user.is_authenticated %}
+                            <a href="tel:{{ listing.phone }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-phone me-1"></i>{{ listing.phone }}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
+                                Conectează-te pentru a vedea numărul
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    {% if listing.email %}
+                        <div class="mb-3">
+                            <strong>Email:</strong><br>
+                            {% if user.is_authenticated %}
+                                <a href="mailto:{{ listing.email }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-envelope me-1"></i>Trimite email
+                                </a>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
+                                    Conectează-te pentru email
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Buton pentru mesaje -->
+                    {% if user.is_authenticated %}
+                        {% if user != listing.owner %}
+                            <div class="mb-3">
+                                <strong>Mesaje:</strong><br>
+                                <a href="{% url 'start_conversation' listing.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-comments me-1"></i>Contactează prin mesaj
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="mb-3">
+                            <strong>Mesaje:</strong><br>
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-comments me-1"></i>Conectează-te pentru a trimite mesaj
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if listing.owner.profile.bio %}
+                        <div>
+                            <strong>Despre vânzător:</strong>
+                            <p class="text-muted small mt-1">{{ listing.owner.profile.bio }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Anunțuri similare -->
+            {% if similar_listings %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tags me-2"></i>Anunțuri similare
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for similar in similar_listings %}
+                            <div class="d-flex mb-3">
+                                {% if similar.get_main_image %}
+                                    <img src="{{ similar.get_main_image }}" 
+                                         class="me-3 rounded" 
+                                         width="60" height="60" 
+                                         style="object-fit: cover;"
+                                         alt="{{ similar.title }}">
+                                {% else %}
+                                    <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center"
+                                         style="width: 60px; height: 60px;">
+                                        <i class="fas fa-image text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'listing_detail' similar.slug %}" 
+                                           class="text-decoration-none">
+                                            {{ similar.title|truncatechars:40 }}
+                                        </a>
+                                    </h6>
+                                    <p class="price-tag mb-0">{{ similar.price|floatformat:0 }} LEI</p>
+                                    <small class="text-muted">{{ similar.city }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

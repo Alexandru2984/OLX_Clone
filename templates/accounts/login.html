@@ -1,0 +1,86 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Conectare - OLX Clone{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>Conectare
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                Nume utilizator
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                       name="username" 
+                                       id="{{ form.username.id_for_label }}"
+                                       placeholder="Numele de utilizator"
+                                       value="{{ form.username.value|default:'' }}"
+                                       required>
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">
+                                Parola
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input type="password" 
+                                       class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+                                       name="password" 
+                                       id="{{ form.password.id_for_label }}"
+                                       placeholder="Parola ta"
+                                       required>
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">{{ form.password.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Conectează-te
+                            </button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="text-center">
+                            <p class="mb-0">Nu ai cont?</p>
+                            <a href="{% url 'register' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus me-2"></i>Înregistrează-te aici
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

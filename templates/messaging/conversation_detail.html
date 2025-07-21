@@ -1,0 +1,405 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Conversație cu {{ other_participant.username }} - OLX Clone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 70vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        max-height: 50vh;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+        margin-bottom: 1rem;
+        animation: fadeInUp 0.3s ease;
+    }
+    
+    .message-bubble.sent {
+        margin-left: auto;
+    }
+    
+    .message-bubble.received {
+        margin-right: auto;
+    }
+    
+    .message-content {
+        padding: 0.75rem 1rem;
+        border-radius: 18px;
+        position: relative;
+        word-wrap: break-word;
+    }
+    
+    .message-bubble.sent .message-content {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+    }
+    
+    .message-bubble.received .message-content {
+        background: white;
+        color: #333;
+        border: 1px solid #e9ecef;
+    }
+    
+    .message-time {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-top: 0.25rem;
+    }
+    
+    .message-bubble.sent .message-time {
+        text-align: right;
+    }
+    
+    .message-bubble.received .message-time {
+        text-align: left;
+        color: #6c757d;
+    }
+    
+    .chat-input-area {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid #e9ecef;
+        border-radius: 0 0 10px 10px;
+    }
+    
+    .participant-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .participant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .listing-preview {
+        background: rgba(255,255,255,0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+    }
+    
+    .listing-preview a {
+        color: white;
+        text-decoration: none;
+    }
+    
+    .listing-preview a:hover {
+        text-decoration: underline;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .typing-indicator {
+        display: none;
+        padding: 0.5rem 1rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    @media (max-width: 768px) {
+        .chat-container {
+            height: 60vh;
+        }
+        
+        .message-bubble {
+            max-width: 85%;
+        }
+        
+        .chat-messages {
+            max-height: 40vh;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'conversation_list' %}">
+                            <i class="fas fa-comments me-1"></i>Mesaje
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        Conversație cu {{ other_participant.username }}
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="card chat-container">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="participant-info">
+                        <div class="participant-avatar">
+                            {{ other_participant.username|first|upper }}
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ other_participant.username }}</h5>
+                            <small>
+                                {% if other_participant.profile.city %}
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ other_participant.profile.city }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="listing-preview">
+                        <small>Anunț:</small>
+                        <a href="{% url 'listing_detail' listing.slug %}" target="_blank">
+                            <i class="fas fa-external-link-alt me-1"></i>{{ listing.title }}
+                            <strong class="ms-2">{{ listing.price }} RON</strong>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Chat Messages -->
+                <div class="chat-messages" id="chat-messages">
+                    {% for message in messages %}
+                        {% include 'messaging/message_bubble.html' with message=message user=request.user %}
+                    {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-comment-dots fa-2x mb-2"></i>
+                            <p>Nu există încă mesaje în această conversație.</p>
+                            <p>Începe conversația scriind primul mesaj!</p>
+                        </div>
+                    {% endfor %}
+                    
+                    <div class="typing-indicator" id="typing-indicator">
+                        {{ other_participant.username }} scrie...
+                    </div>
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="chat-input-area">
+                    <form method="post" id="message-form" class="d-flex gap-2 align-items-end">
+                        {% csrf_token %}
+                        <div class="flex-grow-1">
+                            {{ form.content }}
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="send-btn" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    
+                    <div class="mt-2 d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-message" 
+                                data-message="Mai este disponibil acest produs?">
+                            Mai este disponibil?
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-message" 
+                                data-message="Care este ultimul preț?">
+                            Ultimul preț?
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary quick-message" 
+                                data-message="Când ne putem întâlni să văd produsul?">
+                            Când ne întâlnim?
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Acțiuni -->
+            <div class="mt-3 d-flex justify-content-between">
+                <a href="{% url 'conversation_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Înapoi la mesaje
+                </a>
+                
+                <div class="d-flex gap-2">
+                    <a href="{% url 'listing_detail' listing.slug %}" class="btn btn-outline-primary" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Vezi anunțul
+                    </a>
+                    <a href="{% url 'delete_conversation' conversation.id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-1"></i>Șterge conversația
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.querySelector('#id_content');
+    const sendBtn = document.getElementById('send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const quickMessageBtns = document.querySelectorAll('.quick-message');
+    
+    // Scroll la ultimul mesaj
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Scroll la încărcarea paginii
+    scrollToBottom();
+    
+    // Activează/dezactivează butonul de trimitere
+    messageInput.addEventListener('input', function() {
+        sendBtn.disabled = this.value.trim() === '';
+    });
+    
+    // Mesaje rapide
+    quickMessageBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const message = this.getAttribute('data-message');
+            messageInput.value = message;
+            messageInput.focus();
+            sendBtn.disabled = false;
+        });
+    });
+    
+    // Trimitere mesaj cu AJAX
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const messageContent = messageInput.value.trim();
+        
+        if (!messageContent) return;
+        
+        // Dezactivează butonul și formularul
+        sendBtn.disabled = true;
+        messageInput.disabled = true;
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Adaugă mesajul nou la chat
+                chatMessages.insertAdjacentHTML('beforeend', data.message_html);
+                
+                // Curăță formularul
+                messageInput.value = '';
+                
+                // Scroll la noul mesaj
+                scrollToBottom();
+                
+                // Afișează notificarea de succes
+                showNotification(data.message, 'success');
+            } else {
+                showNotification('Eroare la trimiterea mesajului', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Eroare:', error);
+            showNotification('Eroare de conexiune', 'error');
+        })
+        .finally(() => {
+            // Reactivează controlele
+            sendBtn.disabled = messageInput.value.trim() === '';
+            messageInput.disabled = false;
+            messageInput.focus();
+        });
+    });
+    
+    // Trimite mesaj cu Enter (dar nu cu Shift+Enter)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (this.value.trim()) {
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        }
+    });
+    
+    // Funcție pentru notificări
+    function showNotification(message, type) {
+        // Creează notificarea
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Elimină automat după 3 secunde
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+    
+    // Marchează mesajele ca citite
+    fetch(`{% url 'mark_messages_read' conversation.id %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        }
+    }).catch(error => console.error('Eroare la marcarea mesajelor ca citite:', error));
+    
+    // Auto-refresh pentru mesaje noi (polling simplu)
+    let lastMessageCount = document.querySelectorAll('.message-bubble').length;
+    
+    function checkForNewMessages() {
+        fetch(window.location.href + '?ajax=1')
+            .then(response => response.text())
+            .then(html => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const newMessages = tempDiv.querySelectorAll('.message-bubble');
+                
+                if (newMessages.length > lastMessageCount) {
+                    // Reîncarcă pagina pentru a afișa mesajele noi
+                    location.reload();
+                }
+            })
+            .catch(error => console.error('Eroare la verificarea mesajelor noi:', error));
+    }
+    
+    // Verifică pentru mesaje noi la fiecare 10 secunde
+    setInterval(checkForNewMessages, 10000);
+});
+</script>
+{% endblock %}

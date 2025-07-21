@@ -1,0 +1,255 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Mesaje - OLX Clone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .conversation-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .conversation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-left-color: #007bff;
+    }
+    
+    .conversation-card.unread {
+        background-color: #f8f9ff;
+        border-left-color: #007bff;
+    }
+    
+    .unread-badge {
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .conversation-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .conversation-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .conversation-preview {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #dee2e6;
+    }
+    
+    @media (max-width: 768px) {
+        .conversation-card {
+            margin-bottom: 0.5rem;
+        }
+        
+        .conversation-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-comments me-2"></i>Mesajele mele
+                    {% if total_unread > 0 %}
+                        <span class="unread-badge ms-2">{{ total_unread }}</span>
+                    {% endif %}
+                </h2>
+                <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-1"></i>Înapoi la anunțuri
+                </a>
+            </div>
+            
+            {% if page_obj %}
+                <div class="row">
+                    {% for conversation in page_obj %}
+                        <div class="col-12 mb-3">
+                            <div class="card conversation-card {% if conversation.unread_count > 0 %}unread{% endif %}">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <div class="conversation-avatar">
+                                                {{ conversation.other_participant.username|first|upper }}
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <h6 class="mb-0">
+                                                    <a href="{% url 'conversation_detail' conversation.id %}" class="text-decoration-none text-dark">
+                                                        {{ conversation.other_participant.username }}
+                                                    </a>
+                                                    {% if conversation.unread_count > 0 %}
+                                                        <span class="unread-badge ms-2">{{ conversation.unread_count }}</span>
+                                                    {% endif %}
+                                                </h6>
+                                                <small class="conversation-time">
+                                                    {% with last_message=conversation.get_last_message %}
+                                                        {% if last_message %}
+                                                            {{ last_message.created_at|timesince }} în urmă
+                                                        {% else %}
+                                                            {{ conversation.created_at|timesince }} în urmă
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </small>
+                                            </div>
+                                            
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-tag me-1"></i>
+                                                    <a href="{% url 'listing_detail' conversation.listing.slug %}" class="text-muted text-decoration-none">
+                                                        {{ conversation.listing.title|truncatechars:40 }}
+                                                    </a>
+                                                </small>
+                                            </div>
+                                            
+                                            {% with last_message=conversation.get_last_message %}
+                                                {% if last_message %}
+                                                    <div class="conversation-preview">
+                                                        {% if last_message.sender == request.user %}
+                                                            <i class="fas fa-reply me-1"></i>Tu: 
+                                                        {% endif %}
+                                                        {{ last_message.content|truncatechars:80 }}
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'conversation_detail' conversation.id %}">
+                                                            <i class="fas fa-comments me-2"></i>Deschide conversația
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'listing_detail' conversation.listing.slug %}">
+                                                            <i class="fas fa-external-link-alt me-2"></i>Vezi anunțul
+                                                        </a>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" href="{% url 'delete_conversation' conversation.id %}">
+                                                            <i class="fas fa-trash me-2"></i>Șterge conversația
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Paginare -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Navigare conversații">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; Prima</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Precedenta</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Pagina {{ page_obj.number }} din {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Următoarea</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Ultima &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <h4>Nu ai încă niciun mesaj</h4>
+                    <p>Când vei iniția o conversație despre un anunț, aceasta va apărea aici.</p>
+                    <a href="{% url 'home' %}" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Explorează anunțurile
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh pentru notificări noi
+function updateUnreadCount() {
+    fetch('{% url "get_unread_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            // Actualizează contorul din navbar dacă există
+            const navBadge = document.querySelector('#messages-count-badge');
+            if (navBadge) {
+                if (data.unread_count > 0) {
+                    navBadge.textContent = data.unread_count;
+                    navBadge.style.display = 'inline';
+                } else {
+                    navBadge.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => console.error('Eroare la actualizarea contorului:', error));
+}
+
+// Actualizează contorul la fiecare 30 de secunde
+setInterval(updateUnreadCount, 30000);
+
+// Actualizează contorul la încărcarea paginii
+document.addEventListener('DOMContentLoaded', updateUnreadCount);
+</script>
+{% endblock %}

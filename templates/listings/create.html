@@ -1,0 +1,289 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Adaugă anunț - OLX Clone{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>
+                        {% if listing %}Editează anunțul{% else %}Adaugă anunț nou{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="listingForm">
+                        {% csrf_token %}
+                        
+                        <!-- Informații de bază -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-info-circle me-2"></i>Informații de bază
+                                </h5>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    Titlu anunț <span class="text-danger">*</span>
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger">{{ form.title.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    Descriere <span class="text-danger">*</span>
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="text-danger">{{ form.description.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">
+                                    Categorie <span class="text-danger">*</span>
+                                </label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="text-danger">{{ form.category.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.condition.id_for_label }}" class="form-label">
+                                    Stare <span class="text-danger">*</span>
+                                </label>
+                                {{ form.condition }}
+                                {% if form.condition.errors %}
+                                    <div class="text-danger">{{ form.condition.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Preț -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-money-bill-wave me-2"></i>Preț
+                                </h5>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">
+                                    Preț (LEI) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    {{ form.price }}
+                                    <span class="input-group-text">LEI</span>
+                                </div>
+                                {% if form.price.errors %}
+                                    <div class="text-danger">{{ form.price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3 d-flex align-items-end">
+                                <div class="form-check">
+                                    {{ form.is_negotiable }}
+                                    <label class="form-check-label" for="{{ form.is_negotiable.id_for_label }}">
+                                        Preț negociabil
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Locație -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Locație
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.city.id_for_label }}" class="form-label">
+                                    Orașul <span class="text-danger">*</span>
+                                </label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                    <div class="text-danger">{{ form.city.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.county.id_for_label }}" class="form-label">
+                                    Județul <span class="text-danger">*</span>
+                                </label>
+                                {{ form.county }}
+                                {% if form.county.errors %}
+                                    <div class="text-danger">{{ form.county.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Contact -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-phone me-2"></i>Contact
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                    Telefon <span class="text-danger">*</span>
+                                </label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger">{{ form.phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    Email (opțional)
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Imagini -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-images me-2"></i>Imagini
+                                </h5>
+                                <p class="text-muted">
+                                    Adaugă până la 10 imagini. Imaginile vor fi comprimate automat pentru o încărcare mai rapidă.
+                                    Poți trage și plasa imaginile în zona de mai jos sau să faci click pentru a le selecta.
+                                </p>
+                            </div>
+                            
+                            <!-- Drag and Drop Area -->
+                            <div class="col-12 mb-3">
+                                <div id="dragDropArea" class="drag-drop-area">
+                                    <div class="drag-drop-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </div>
+                                    <h5>Trage imaginile aici</h5>
+                                    <p class="text-muted mb-3">sau fă click pentru a selecta fișiere</p>
+                                    <button type="button" class="btn btn-outline-primary">
+                                        <i class="fas fa-folder-open me-2"></i>Selectează imagini
+                                    </button>
+                                </div>
+                                
+                                <input type="file" 
+                                       class="file-input-hidden" 
+                                       id="imageInput" 
+                                       name="images" 
+                                       accept="image/*" 
+                                       multiple>
+                                <div class="form-text mt-2">
+                                    Acceptă: JPG, PNG, GIF. Mărime maximă per imagine: 10MB.
+                                </div>
+                            </div>
+                            
+                            <!-- Informații compresie -->
+                            <div class="col-12 mb-3">
+                                <div id="compressionInfo"></div>
+                            </div>
+                            
+                            <!-- Preview imagini -->
+                            <div class="col-12">
+                                <div id="imagePreview" class="row"></div>
+                            </div>
+                        </div>
+
+                        <!-- Butoane -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% if listing %}{% url 'listing_detail' listing.slug %}{% else %}{% url 'home' %}{% endif %}" 
+                                       class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Anulează
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>
+                                        {% if listing %}Actualizează anunțul{% else %}Publică anunțul{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const compressionInfo = document.getElementById('compressionInfo');
+    const dragDropArea = document.getElementById('dragDropArea');
+    
+    let compressedFilesArray = []; // Array pentru a ține evidența fișierelor
+    
+    // Inițializez compresia imaginilor
+    const { processFiles, removeImageFromPreview } = compressImages(imageInput, imagePreview, compressionInfo);
+    
+    // Override processFiles pentru a păstra referința la array
+    const originalProcessFiles = processFiles;
+    const customProcessFiles = async function(files) {
+        compressedFilesArray = []; // Reset array
+        await originalProcessFiles(files);
+        // Copiez fișierele în array-ul nostru
+        Array.from(imageInput.files).forEach(file => compressedFilesArray.push(file));
+    };
+    
+    // Configurez drag and drop
+    setupDragAndDrop(dragDropArea, imageInput, customProcessFiles);
+    
+    // Suprascriere pentru funcția de ștergere
+    window.removeImageFromPreview = function(previewElement, fileIndex) {
+        removeImageFromPreview(previewElement, fileIndex, compressedFilesArray);
+    };
+    
+    // Validare formular
+    document.getElementById('listingForm').addEventListener('submit', function(e) {
+        const title = document.querySelector('input[name="title"]').value.trim();
+        const description = document.querySelector('textarea[name="description"]').value.trim();
+        const price = document.querySelector('input[name="price"]').value;
+        const category = document.querySelector('select[name="category"]').value;
+        const city = document.querySelector('input[name="city"]').value.trim();
+        const county = document.querySelector('input[name="county"]').value.trim();
+        const phone = document.querySelector('input[name="phone"]').value.trim();
+        
+        let errors = [];
+        
+        if (!title) errors.push('Titlul este obligatoriu');
+        if (!description) errors.push('Descrierea este obligatorie');
+        if (!price || price <= 0) errors.push('Prețul trebuie să fie mai mare ca 0');
+        if (!category) errors.push('Categoria este obligatorie');
+        if (!city) errors.push('Orașul este obligatoriu');
+        if (!county) errors.push('Județul este obligatoriu');
+        if (!phone) errors.push('Telefonul este obligatoriu');
+        // Comentez temporar validarea pentru imagini pentru testare
+        // if (!imageInput.files || imageInput.files.length === 0) {
+        //     errors.push('Cel puțin o imagine este obligatorie');
+        // }
+        
+        if (errors.length > 0) {
+            e.preventDefault();
+            alert('Erori:\n' + errors.join('\n'));
+            return false;
+        }
+    });
+    
+    // Mesaj informativ pentru mobile
+    if (window.innerWidth <= 768) {
+        const dragText = dragDropArea.querySelector('h5');
+        dragText.textContent = 'Apasă pentru a selecta imagini';
+        const dragSubtext = dragDropArea.querySelector('p');
+        dragSubtext.textContent = 'Selectează până la 10 imagini';
+    }
+});
+</script>
+{% endblock %}

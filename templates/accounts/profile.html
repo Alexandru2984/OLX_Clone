@@ -1,0 +1,285 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Profilul meu{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: bold;
+        border: 4px solid rgba(255,255,255,0.3);
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .info-section {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        border: 1px solid #e9ecef;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-icon {
+        width: 40px;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .email-status {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .email-confirmed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .email-unconfirmed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header profil -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                {% if user_profile.avatar %}
+                    <img src="{{ user_profile.avatar.url }}" 
+                         class="profile-avatar" 
+                         style="object-fit: cover;"
+                         alt="Avatar {{ user.username }}">
+                {% else %}
+                    <div class="profile-avatar">
+                        {{ user.username|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col">
+                <h1 class="mb-2">{{ user.first_name|default:user.username }}</h1>
+                <p class="mb-1">
+                    <i class="fas fa-at me-2"></i>{{ user.username }}
+                </p>
+                {% if user_profile.get_full_location %}
+                    <p class="mb-1">
+                        <i class="fas fa-map-marker-alt me-2"></i>{{ user_profile.get_full_location }}
+                    </p>
+                {% endif %}
+                <p class="mb-0">
+                    <i class="fas fa-calendar me-2"></i>Membru din {{ user.date_joined|date:"F Y" }}
+                </p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'edit_profile' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-edit me-2"></i>Editează profilul
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistici -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ user_profile.total_listings }}</div>
+                <div class="text-muted">Anunțuri active</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ user_profile.total_sold }}</div>
+                <div class="text-muted">Produse vândute</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">0</div>
+                <div class="text-muted">Conversații</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">0</div>
+                <div class="text-muted">Favorite</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Informații personale -->
+        <div class="col-lg-8">
+            <div class="info-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-user me-2"></i>Informații personale
+                </h4>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <strong>Email:</strong> {{ user.email }}
+                        {% if user.email_confirmation.is_confirmed %}
+                            <span class="email-status email-confirmed ms-2">
+                                <i class="fas fa-check-circle me-1"></i>Confirmat
+                            </span>
+                        {% else %}
+                            <span class="email-status email-unconfirmed ms-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>Neconfirmat
+                            </span>
+                            <a href="{% url 'resend_confirmation' %}" class="btn btn-sm btn-outline-warning ms-2">
+                                Retrimite confirmarea
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if user_profile.phone %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Telefon:</strong> {{ user_profile.phone }}
+                            {% if user_profile.phone_public %}
+                                <span class="badge bg-success ms-2">Public</span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2">Privat</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if user_profile.city %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Locație:</strong> {{ user_profile.get_full_location }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if user_profile.bio %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Despre mine:</strong><br>
+                            {{ user_profile.bio|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Acțiuni rapide -->
+        <div class="col-lg-4">
+            <div class="info-section">
+                <h4 class="mb-3">
+                    <i class="fas fa-bolt me-2"></i>Acțiuni rapide
+                </h4>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'listing_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Adaugă anunț nou
+                    </a>
+                    
+                    <a href="{% url 'my_listings' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>Anunțurile mele
+                    </a>
+                    
+                    <a href="{% url 'saved_listings' %}" class="btn btn-outline-success">
+                        <i class="fas fa-heart me-2"></i>Anunțuri salvate
+                    </a>
+                    
+                    <a href="{% url 'conversation_list' %}" class="btn btn-outline-info">
+                        <i class="fas fa-comments me-2"></i>Mesajele mele
+                    </a>
+                </div>
+                
+                <hr class="my-3">
+                
+                <h5 class="mb-3">Setări</h5>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" 
+                           {% if user_profile.email_notifications %}checked{% endif %}
+                           id="emailNotifications" disabled>
+                    <label class="form-check-label" for="emailNotifications">
+                        Notificări email
+                    </label>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" 
+                           {% if user_profile.phone_public %}checked{% endif %}
+                           id="phonePublic" disabled>
+                    <label class="form-check-label" for="phonePublic">
+                        Telefon public în anunțuri
+                    </label>
+                </div>
+                
+                <a href="{% url 'edit_profile' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-cog me-1"></i>Modifică setările
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
