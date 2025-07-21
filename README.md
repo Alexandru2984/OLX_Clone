@@ -9,6 +9,14 @@ Un clone modern al platformei OLX, dezvoltat în Django, cu funcționalități c
 
 ## ✅ Probleme Rezolvate Recent
 
+### 🆕 Noi Funcționalități (Latest Update)
+- **✅ Editare email în profil** - Utilizatorii pot modifica adresa de email cu reconfirmarea automată
+- **✅ Parolă uitată la login** - Link direct în pagina de conectare pentru resetarea parolei
+- **✅ Schimbare parolă din profil** - Buton dedicat în pagina de profil pentru modificarea parolei
+- **✅ Formulare personalizate** - Design consistent pentru toate operațiunile de autentificare
+- **✅ Emailuri HTML** - Template-uri profesionale pentru resetarea parolei
+- **✅ Validări îmbunătățite** - Verificări de securitate pentru toate formularele
+
 ### 🐛 Fix-uri Implementate
 - **✅ Mesaje personalizate** - Rezolvat problema cu textarea-ul pentru mesaje custom
 - **✅ Template editare anunț** - Creat template complet pentru editarea anunțurilor (`edit.html`)
@@ -42,13 +50,38 @@ Un clone modern al platformei OLX, dezvoltat în Django, cu funcționalități c
 - Apasă dropdown-ul "Status" de lângă fiecare anunț
 - Alege noul status dorit
 
+### 🔐 Workflow Autentificare Completă
+
+#### Resetare Parolă:
+1. **Click "Ai uitat parola?"** din pagina de login
+2. **Introduci emailul** asociat contului
+3. **Primești email** cu link de resetare (valabil 24h)
+4. **Setezi parola nouă** prin formularul securizat
+5. **Confirmare** și redirecționare către login
+
+#### Editare Email în Profil:
+1. **Accesezi "Editează profilul"** din pagina personală
+2. **Modifici adresa de email** în formular
+3. **Salvezi modificările** - emailul se actualizează
+4. **Primești email de reconfirmarea** la noua adresă
+5. **Confirmi noua adresă** prin link-ul din email
+
+#### Schimbare Parolă din Profil:
+1. **Click "Schimbă parola"** din pagina de profil
+2. **Introduci parola curentă** pentru verificare
+3. **Setezi parola nouă** de două ori pentru confirmare
+4. **Salvezi** - parola se actualizează imediat
+
 ## ✨ Funcționalități Principale
 
-### 🔐 Sistem de Autentificare
+### 🔐 Sistem de Autentificare Complet
 - **Înregistrare cu confirmare email** - Utilizatorii primesc email de confirmare
-- **Login/Logout securizat** - Sesiuni protejate
+- **Login/Logout securizat** - Sesiuni protejate cu CSRF
 - **Profil utilizator complet** - Avatar, informații personale, setări
-- **Resetare parolă prin email** - Recuperare securizată
+- **✨ Editare email din profil** - Modificarea adresei cu reconfirmarea automată
+- **✨ Resetare parolă prin email** - Workflow complet pentru recuperarea parolei
+- **✨ Schimbare parolă din profil** - Opțiune directă în panoul utilizatorului
+- **Validări avansate** - Verificări de securitate pentru toate operațiunile
 
 ### 📝 Gestionarea Anunțurilor
 - **Creare anunțuri** - Interfață intuitivă cu upload imagini

@@ -151,15 +151,15 @@ LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login/'
 
 # Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = ''  # Vei adăuga email-ul tău aici
-EMAIL_HOST_PASSWORD = ''  # Vei adăuga parola sau app password aici
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = ''  # Vei adăuga email-ul tău aici
+# EMAIL_HOST_PASSWORD = ''  # Vei adăuga parola sau app password aici
 
-# Pentru development, poți folosi backend-ul de consolă
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Pentru development, folosim backend-ul de consolă
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Email settings pentru confirmare
 DEFAULT_FROM_EMAIL = 'noreply@olxclone.com'

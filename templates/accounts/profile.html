@@ -123,9 +123,14 @@
                 </p>
             </div>
             <div class="col-auto">
-                <a href="{% url 'edit_profile' %}" class="btn btn-light btn-lg">
-                    <i class="fas fa-edit me-2"></i>Editează profilul
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'edit_profile' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-edit me-2"></i>Editează profilul
+                    </a>
+                    <a href="{% url 'password_change' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-key me-2"></i>Schimbă parola
+                    </a>
+                </div>
             </div>
         </div>
     </div>
