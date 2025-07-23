@@ -7,7 +7,7 @@ Un clone modern al platformei OLX, dezvoltat în Django, cu funcționalități c
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-## ✅ Probleme Rezolvate Recent
+## ✅ Probleme Rezolvate Recent 
 
 ### 🆕 Noi Funcționalități (Latest Update)
 - **✅ Editare email în profil** - Utilizatorii pot modifica adresa de email cu reconfirmarea automată
@@ -83,6 +83,14 @@ Un clone modern al platformei OLX, dezvoltat în Django, cu funcționalități c
 - **✨ Schimbare parolă din profil** - Opțiune directă în panoul utilizatorului
 - **Validări avansate** - Verificări de securitate pentru toate operațiunile
 
+#### 🛡️ Securitate Autentificare:
+- **Password Hashing**: PBKDF2 cu SHA256 + salt unic per parolă
+- **Token Security**: Token-uri unice cu expirare pentru resetare/confirmare
+- **Session Protection**: Cookie-uri securizate cu HttpOnly și Secure flags
+- **CSRF Protection**: Protecție completă împotriva atacurilor cross-site
+- **Input Validation**: Sanitizare și validare pentru toate input-urile
+- **Rate Limiting**: Protecție împotriva atacurilor brute-force (în producție)
+
 ### 📝 Gestionarea Anunțurilor
 - **Creare anunțuri** - Interfață intuitivă cu upload imagini
 - **Editare și gestionare** - Controlul complet asupra anunțurilor
@@ -126,6 +134,62 @@ django-crispy-bootstrap4
 django-widget-tweaks
 Pillow  # Pentru procesarea imaginilor
 ```
+
+## 🛡️ Securitate și Autentificare
+
+### Password Hashing
+Django folosește **PBKDF2 cu SHA256** pentru hash-uirea parolelor:
+```python
+# Exemplu hash în database
+pbkdf2_sha256$390000$randomsalt$hashedpassword
+
+# Configurare în settings.py
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',  # Default
+    'django.contrib.auth.hashers.Argon2PasswordHasher',  # Alternative
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+```
+
+### Validări Parole
+```python
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8}
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+```
+
+### Securitatea Sesiunilor
+```python
+SESSION_COOKIE_AGE = 1209600  # 2 săptămâni
+SESSION_COOKIE_SECURE = True  # Pentru HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Previne XSS
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+```
+
+### Token-uri Securizate
+- **Email Confirmation**: Token-uri de 64 caractere cu expirare în 3 zile
+- **Password Reset**: Token-uri Django built-in cu expirare în 24h
+- **CSRF Protection**: Token-uri unice pentru fiecare sesiune
+
+### Măsuri de Protecție
+- ✅ **SQL Injection**: Django ORM previne automat
+- ✅ **XSS**: Template escaping automat
+- ✅ **CSRF**: Protecție pe toate formularele
+- ✅ **Session Fixation**: Regenerare sesiune la login
+- ✅ **Brute Force**: Rate limiting prin Nginx în producție
 
 ## 🚀 Instalare și Configurare
 
@@ -302,7 +366,48 @@ heroku run python manage.py createsuperuser
 heroku run python manage.py collectstatic --noinput
 ```
 
-### Option 2: VPS/DigitalOcean Deploy
+### Option 2: VPS cu Domeniul Tău (Recomandat)
+
+#### 1. Pregătirea pentru VPS
+```bash
+# Pe serverul local, pregătește fișierele
+cp olx_clone/settings_production.py olx_clone/settings_production.py.backup
+cp .env.production.example .env.production
+
+# Editează .env.production cu datele tale:
+nano .env.production
+```
+
+#### 2. Configurare Environment Variables
+```bash
+# .env.production (pe server)
+DJANGO_ENV=production
+DJANGO_DEBUG=False
+SECRET_KEY=your-very-secret-key
+
+# Database
+DB_NAME=olx_clone_db
+DB_USER=olx_user
+DB_PASSWORD=your-strong-password
+
+# Email pentru domeniul tău
+EMAIL_HOST=mail.yourdomain.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=noreply@yourdomain.com
+EMAIL_HOST_PASSWORD=your-email-password
+```
+
+#### 3. Configurare Email în cPanel/Hosting
+1. **Creează adresele de email în cPanel:**
+   - `noreply@yourdomain.com`
+   - `admin@yourdomain.com`
+   - `server@yourdomain.com`
+
+2. **Găsește setările SMTP în cPanel:**
+   - Outgoing Server: `mail.yourdomain.com` sau `smtp.yourdomain.com`
+   - Port: `587` (TLS) sau `465` (SSL)
+   - Authentication: Activat
 
 #### 1. Configurare Server
 ```bash
@@ -445,6 +550,105 @@ python manage.py clearsessions
 
 # Update search indexes (dacă folosești search)
 python manage.py update_index
+```
+
+## 🌐 Configurare Domeniu Personal
+
+### 📧 Setări Email pentru Domeniul Tău
+
+#### 1. Creează Adresele de Email în cPanel
+```
+noreply@yourdomain.com   - Pentru emailuri automate
+admin@yourdomain.com     - Pentru notificări admin
+server@yourdomain.com    - Pentru erori de server
+```
+
+#### 2. Configurare Django pentru Domeniul Tău
+```python
+# În settings_production.py
+ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com']
+
+# Email configuration
+EMAIL_HOST = 'mail.yourdomain.com'
+EMAIL_HOST_USER = 'noreply@yourdomain.com'
+DEFAULT_FROM_EMAIL = 'OLX Clone <noreply@yourdomain.com>'
+```
+
+#### 3. Testează Configurația Email
+```bash
+# Pe server, testează trimiterea de email
+python manage.py shell
+>>> from django.core.mail import send_mail
+>>> send_mail('Test', 'Mesaj test', 'noreply@yourdomain.com', ['your-email@gmail.com'])
+```
+
+### 🚀 Deploy pe VPS cu Domeniul Tău
+
+#### 1. Upload Proiect pe Server
+```bash
+# Conectează-te la VPS
+ssh root@your-server-ip
+
+# Navighează în directorul web
+cd /var/www/
+mkdir yourdomain.com
+cd yourdomain.com
+
+# Clonează proiectul
+git clone your-git-repo.git .
+```
+
+#### 2. Configurare Environment
+```bash
+# Copiază fișierul de environment
+cp .env.production.example .env
+nano .env
+
+# Editează cu datele tale:
+DJANGO_ENV=production
+SECRET_KEY=your-secret-key
+EMAIL_HOST=mail.yourdomain.com
+EMAIL_HOST_USER=noreply@yourdomain.com
+EMAIL_HOST_PASSWORD=your-password
+```
+
+#### 3. Configurare Nginx pentru Domeniul Tău
+```nginx
+# /etc/nginx/sites-available/yourdomain.com
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    location = /favicon.ico { 
+        access_log off; 
+        log_not_found off; 
+    }
+    
+    location /static/ {
+        alias /var/www/yourdomain.com/staticfiles/;
+    }
+    
+    location /media/ {
+        alias /var/www/yourdomain.com/media/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/yourdomain.com/olx_clone.sock;
+    }
+}
+```
+
+#### 4. SSL Certificate cu Let's Encrypt
+```bash
+# Instalează Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obține certificat SSL pentru domeniul tău
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+
+# Verifică renewarea automată
+sudo certbot renew --dry-run
 ```
 
 ## 🐛 Troubleshooting

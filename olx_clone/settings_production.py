@@ -1,4 +1,20 @@
-# Settings pentru producție - Heroku/DigitalOcean
+# Settings pentru producție - VPS cu d# Email Configuration pentru domeniul tău
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Configurație pentru cPanel/Hosting Provider obișnuit
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'mail.yourdomain.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'noreply@yourdomain.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+# Email defaults pentru domeniul tău
+DEFAULT_FROM_EMAIL = 'OLX Clone <noreply@yourdomain.com>'
+SERVER_EMAIL = 'server@yourdomain.com'
+ADMINS = [
+    ('Admin', 'admin@yourdomain.com'),
+    ('Your Name', 'your-email@yourdomain.com'),
+]
 import os
 import dj_database_url
 from .settings import *
@@ -6,9 +22,10 @@ from .settings import *
 # Security
 DEBUG = False
 ALLOWED_HOSTS = [
-    'your-app-name.herokuapp.com',
-    'your-domain.com', 
-    'www.your-domain.com',
+    'yourdomain.com',
+    'www.yourdomain.com', 
+    'olx.yourdomain.com',  # daca folosesti subdomain
+    'your-server-ip',  # IP-ul VPS-ului
     'localhost',
     '127.0.0.1'
 ]

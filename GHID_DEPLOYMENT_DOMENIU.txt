@@ -1,0 +1,460 @@
+================================================================================
+               GHID COMPLET: CONFIGURARE OLX CLONE PE DOMENIUL TĂU
+================================================================================
+
+📅 Data: 22 Iulie 2025
+🎯 Obiectiv: Deploy OLX Clone pe VPS cu domeniul personal și email propriu
+
+================================================================================
+1. PREGĂTIREA PROIECTULUI PENTRU PRODUCTION
+================================================================================
+
+1.1. Verifică fișierele de configurare existente:
+   ✅ olx_clone/settings_production.py - creat
+   ✅ .env.production.example - creat
+   ✅ deploy.sh - actualizat
+
+1.2. Actualizează settings_production.py cu domeniul tău:
+   - Înlocuiește 'yourdomain.com' cu domeniul tău real
+   - Înlocuiește 'your-server-ip' cu IP-ul VPS-ului tău
+
+================================================================================
+2. CONFIGURARE EMAIL ÎN cPANEL/HOSTING
+================================================================================
+
+2.1. Creează adresele de email în cPanel:
+   📧 noreply@yourdomain.com   (pentru emailuri automate)
+   📧 admin@yourdomain.com     (pentru notificări admin)
+   📧 server@yourdomain.com    (pentru erori de server)
+
+2.2. Găsește setările SMTP în cPanel:
+   - Mergi la "Email" → "Email Accounts" → "Connect Devices"
+   - Notează setările:
+     * Outgoing Server: mail.yourdomain.com sau smtp.yourdomain.com
+     * Port: 587 (TLS) sau 465 (SSL)
+     * Authentication: Da
+     * Username: noreply@yourdomain.com
+     * Password: parola pe care o setezi
+
+2.3. Testează emailul din cPanel:
+   - Trimite un email de test pentru a verifica configurația
+
+================================================================================
+3. CONFIGURARE ENVIRONMENT VARIABLES
+================================================================================
+
+3.1. Creează fișierul .env pe server:
+```
+DJANGO_ENV=production
+DJANGO_DEBUG=False
+SECRET_KEY=genereaza-un-secret-key-foarte-lung-si-random
+
+# Database Configuration
+DB_NAME=olx_clone_db
+DB_USER=olx_user
+DB_PASSWORD=parola-foarte-sigura-pentru-db
+DB_HOST=localhost
+DB_PORT=5432
+
+# Email Configuration pentru domeniul tău
+EMAIL_HOST=mail.yourdomain.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=noreply@yourdomain.com
+EMAIL_HOST_PASSWORD=parola-din-cpanel
+
+# Alternative pentru cPanel/Shared Hosting (dacă primul nu merge):
+# EMAIL_HOST=smtp.yourdomain.com
+# EMAIL_PORT=465
+# EMAIL_USE_TLS=False
+# EMAIL_USE_SSL=True
+```
+
+3.2. Generează SECRET_KEY nou:
+```python
+from django.core.management.utils import get_random_secret_key
+print(get_random_secret_key())
+```
+
+================================================================================
+4. ACTUALIZARE FIȘIERE DE CONFIGURARE
+================================================================================
+
+4.1. Editează olx_clone/settings_production.py:
+```python
+# Înlocuiește 'yourdomain.com' cu domeniul tău real
+ALLOWED_HOSTS = [
+    'yourdomain.com',           # SCHIMBĂ CU DOMENIUL TĂU
+    'www.yourdomain.com',       # SCHIMBĂ CU DOMENIUL TĂU
+    'your-server-ip',           # SCHIMBĂ CU IP-UL VPS-ULUI
+    'localhost',
+    '127.0.0.1'
+]
+
+# Email defaults pentru domeniul tău
+DEFAULT_FROM_EMAIL = 'OLX Clone <noreply@yourdomain.com>'  # SCHIMBĂ
+SERVER_EMAIL = 'server@yourdomain.com'                      # SCHIMBĂ
+ADMINS = [
+    ('Admin', 'admin@yourdomain.com'),                       # SCHIMBĂ
+    ('Your Name', 'your-email@yourdomain.com'),             # SCHIMBĂ
+]
+```
+
+4.2. Verifică că există configurația corectă pentru email în același fișier:
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'mail.yourdomain.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'noreply@yourdomain.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+```
+
+================================================================================
+5. DEPLOYMENT PE VPS
+================================================================================
+
+5.1. Conectează-te la VPS:
+```bash
+ssh root@your-server-ip
+# sau
+ssh username@your-server-ip
+```
+
+5.2. Instalează dependențele sistemului:
+```bash
+sudo apt update
+sudo apt install -y python3-pip python3-venv nginx postgresql postgresql-contrib git
+```
+
+5.3. Configurează PostgreSQL:
+```bash
+sudo -u postgres psql
+CREATE DATABASE olx_clone_db;
+CREATE USER olx_user WITH PASSWORD 'parola-foarte-sigura-pentru-db';
+GRANT ALL PRIVILEGES ON DATABASE olx_clone_db TO olx_user;
+ALTER USER olx_user CREATEDB;
+\q
+```
+
+5.4. Creează directorul proiectului:
+```bash
+sudo mkdir -p /var/www/yourdomain.com
+sudo chown $USER:www-data /var/www/yourdomain.com
+cd /var/www/yourdomain.com
+```
+
+5.5. Clonează proiectul:
+```bash
+git clone https://github.com/yourusername/olx-clone.git .
+# sau uploads fișierele manual prin FTP/SCP
+```
+
+5.6. Configurează mediul virtual Python:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install gunicorn psycopg2-binary
+```
+
+5.7. Configurează environment variables:
+```bash
+cp .env.production.example .env
+nano .env
+# Editează cu datele tale din punctul 3.1
+```
+
+5.8. Configurează Django:
+```bash
+export DJANGO_SETTINGS_MODULE=olx_clone.settings_production
+python manage.py migrate
+python manage.py collectstatic --noinput
+python manage.py createsuperuser
+```
+
+================================================================================
+6. CONFIGURARE GUNICORN SERVICE
+================================================================================
+
+6.1. Creează service file:
+```bash
+sudo nano /etc/systemd/system/olx-clone-yourdomain.service
+```
+
+6.2. Conținut service file:
+```ini
+[Unit]
+Description=OLX Clone Django App for yourdomain.com
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/yourdomain.com
+Environment="PATH=/var/www/yourdomain.com/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=olx_clone.settings_production"
+EnvironmentFile=/var/www/yourdomain.com/.env
+ExecStart=/var/www/yourdomain.com/venv/bin/gunicorn --workers 3 --bind unix:/var/www/yourdomain.com/olx_clone.sock olx_clone.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+```
+
+6.3. Activează serviciul:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable olx-clone-yourdomain
+sudo systemctl start olx-clone-yourdomain
+sudo systemctl status olx-clone-yourdomain
+```
+
+================================================================================
+7. CONFIGURARE NGINX
+================================================================================
+
+7.1. Creează configurația Nginx:
+```bash
+sudo nano /etc/nginx/sites-available/yourdomain.com
+```
+
+7.2. Conținut configurație Nginx:
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    location = /favicon.ico { 
+        access_log off; 
+        log_not_found off; 
+    }
+    
+    location /static/ {
+        alias /var/www/yourdomain.com/staticfiles/;
+    }
+    
+    location /media/ {
+        alias /var/www/yourdomain.com/media/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/yourdomain.com/olx_clone.sock;
+    }
+}
+```
+
+7.3. Activează site-ul:
+```bash
+sudo ln -s /etc/nginx/sites-available/yourdomain.com /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+================================================================================
+8. CONFIGURARE SSL (HTTPS)
+================================================================================
+
+8.1. Instalează Certbot:
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+```
+
+8.2. Obține certificat SSL:
+```bash
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+```
+
+8.3. Testează renewarea automată:
+```bash
+sudo certbot renew --dry-run
+```
+
+8.4. După SSL, activează setările HTTPS în settings_production.py:
+```python
+# Decomentează aceste linii:
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+```
+
+================================================================================
+9. TESTARE ȘI VERIFICARE
+================================================================================
+
+9.1. Verifică că site-ul funcționează:
+```bash
+curl -I http://yourdomain.com
+curl -I https://yourdomain.com
+```
+
+9.2. Testează emailul:
+```bash
+cd /var/www/yourdomain.com
+source venv/bin/activate
+export DJANGO_SETTINGS_MODULE=olx_clone.settings_production
+python manage.py shell
+```
+
+În shell-ul Django:
+```python
+from django.core.mail import send_mail
+send_mail(
+    'Test Email', 
+    'Acesta este un email de test de la OLX Clone', 
+    'noreply@yourdomain.com', 
+    ['your-personal-email@gmail.com']
+)
+```
+
+9.3. Verifică logs pentru erori:
+```bash
+sudo journalctl -u olx-clone-yourdomain -f
+sudo tail -f /var/log/nginx/error.log
+sudo tail -f /var/www/yourdomain.com/django.log
+```
+
+================================================================================
+10. CONFIGURARE FINALĂ ȘI SECURITATE
+================================================================================
+
+10.1. Schimbă parola de admin:
+   - Mergi la https://yourdomain.com/admin/
+   - Login cu admin/admin123 (din deployment)
+   - Schimbă parola în ceva foarte sigur
+
+10.2. Configurează backup automat:
+```bash
+# Creează script backup
+sudo nano /usr/local/bin/backup-olx.sh
+```
+
+Conținut script:
+```bash
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/var/backups/olx-clone"
+mkdir -p $BACKUP_DIR
+
+# Backup database
+sudo -u postgres pg_dump olx_clone_db > $BACKUP_DIR/db_$DATE.sql
+
+# Backup media files
+tar -czf $BACKUP_DIR/media_$DATE.tar.gz /var/www/yourdomain.com/media/
+
+# Cleanup old backups (păstrează doar ultimele 7 zile)
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
+```
+
+10.3. Adaugă în crontab pentru backup zilnic:
+```bash
+sudo crontab -e
+# Adaugă linia:
+0 2 * * * /usr/local/bin/backup-olx.sh
+```
+
+================================================================================
+11. VERIFICARE FINALĂ - CHECKLIST
+================================================================================
+
+□ Site accesibil la https://yourdomain.com
+□ Admin panel funcțional la https://yourdomain.com/admin/
+□ Email-urile se trimit cu succes
+□ SSL certificate activ (HTTPS)
+□ Toate paginile se încarcă corect
+□ Upload imagini funcționează
+□ Înregistrare utilizatori funcționează
+□ Resetare parolă prin email funcționează
+□ Mesagerie între utilizatori funcționează
+□ Backup automat configurat
+
+================================================================================
+12. COMENZI UTILE PENTRU MAINTENANCE
+================================================================================
+
+12.1. Restart servicii:
+```bash
+sudo systemctl restart olx-clone-yourdomain
+sudo systemctl restart nginx
+sudo systemctl restart postgresql
+```
+
+12.2. Update proiect:
+```bash
+cd /var/www/yourdomain.com
+git pull origin main
+source venv/bin/activate
+pip install -r requirements.txt
+export DJANGO_SETTINGS_MODULE=olx_clone.settings_production
+python manage.py migrate
+python manage.py collectstatic --noinput
+sudo systemctl restart olx-clone-yourdomain
+```
+
+12.3. Monitorizare logs:
+```bash
+# Django app logs
+sudo journalctl -u olx-clone-yourdomain -f
+
+# Nginx logs
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
+
+# Django application logs
+tail -f /var/www/yourdomain.com/django.log
+```
+
+12.4. Backup manual:
+```bash
+sudo -u postgres pg_dump olx_clone_db > backup_$(date +%Y%m%d).sql
+tar -czf media_backup_$(date +%Y%m%d).tar.gz /var/www/yourdomain.com/media/
+```
+
+================================================================================
+13. DEPANARE PROBLEME COMUNE
+================================================================================
+
+13.1. Site nu se încarcă:
+   - Verifică dacă Gunicorn rulează: sudo systemctl status olx-clone-yourdomain
+   - Verifică configurația Nginx: sudo nginx -t
+   - Verifică logs: sudo journalctl -u olx-clone-yourdomain
+
+13.2. Email-urile nu se trimit:
+   - Verifică setările SMTP în .env
+   - Testează din Django shell
+   - Verifică că portul 587/465 nu este blocat
+
+13.3. Erori 500:
+   - Verifică logs Django: tail -f /var/www/yourdomain.com/django.log
+   - Verifică configurația database în .env
+   - Rulează python manage.py check --deploy
+
+13.4. Static files nu se încarcă:
+   - Rulează python manage.py collectstatic --noinput
+   - Verifică permisiunile: sudo chown -R www-data:www-data /var/www/yourdomain.com/staticfiles/
+
+================================================================================
+14. INFORMAȚII DE CONTACT ȘI FINALIZARE
+================================================================================
+
+🎉 Felicitări! Ai configurat cu succes OLX Clone pe domeniul tău!
+
+🌐 Site-ul tău: https://yourdomain.com
+👨‍💻 Admin panel: https://yourdomain.com/admin/
+📧 Email test: noreply@yourdomain.com
+
+📝 Pentru suport sau întrebări:
+   - Verifică logs-urile pentru erori
+   - Consultă documentația Django
+   - Verifică setările de email în cPanel
+
+🔐 Securitate:
+   - Schimbă parola de admin default
+   - Actualizează regulat dependențele: pip install --upgrade -r requirements.txt
+   - Monitorizează logs-urile pentru activitate suspectă
+
+================================================================================
+                            SUCCES ȘI MULT NOROC! 🚀
+================================================================================

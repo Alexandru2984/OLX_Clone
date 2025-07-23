@@ -23,9 +23,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-s)as@a$$(j1@++ml&n09(rirxuu_ke!^^$)c00uf8*hc59%2@l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+import os
 
-ALLOWED_HOSTS = []
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+
+# Configurare pentru domeniul tău
+if os.environ.get('DJANGO_ENV') == 'production':
+    ALLOWED_HOSTS = [
+        'yourdomain.com', 
+        'www.yourdomain.com',
+        'olx.yourdomain.com'  # dacă folosești subdomain
+    ]
+    
+    # Setări de securitate pentru production
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -151,19 +172,27 @@ LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login/'
 
 # Email Configuration
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = ''  # Vei adăuga email-ul tău aici
-# EMAIL_HOST_PASSWORD = ''  # Vei adăuga parola sau app password aici
+import os
 
-# Pentru development, folosim backend-ul de consolă
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# Email settings pentru confirmare
-DEFAULT_FROM_EMAIL = 'noreply@olxclone.com'
-ADMINS = [('Admin', 'admin@olxclone.com')]
+# Pentru production cu domeniul tău
+if os.environ.get('DJANGO_ENV') == 'production':
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.yourdomain.com'  # sau mail.yourdomain.com
+    EMAIL_PORT = 587  # sau 465 pentru SSL
+    EMAIL_USE_TLS = True  # sau EMAIL_USE_SSL = True pentru port 465
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'noreply@yourdomain.com')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+    
+    # Setări pentru domeniul tău
+    DEFAULT_FROM_EMAIL = 'OLX Clone <noreply@yourdomain.com>'
+    SERVER_EMAIL = 'server@yourdomain.com'
+    ADMINS = [('Admin', 'admin@yourdomain.com')]
+    
+else:
+    # Pentru development
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'noreply@olxclone.com'
+    ADMINS = [('Admin', 'admin@olxclone.com')]
 
 # Account confirmation settings
 EMAIL_CONFIRMATION_REQUIRED = True
